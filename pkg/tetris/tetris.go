@@ -1,6 +1,8 @@
 package tetris
 
-import "context"
+import (
+	"context"
+)
 
 // Tetris 游戏实例
 type Tetris interface {
@@ -54,4 +56,71 @@ const (
 // Frame 帧
 //
 // 包含某时刻游戏画面应显示的信息，如方块位置、得分等
-type Frame struct{}
+type Frame struct {
+	// 行列数
+	Rows, Columns int
+	// 场上方块填充情况，不含活跃方块
+	Field FieldStatus
+	// 活跃的方块
+	ActiveBlock Block
+	// 暂存的方块
+	HoldingBlock *BlockType
+	// 下一个方块
+	NextBlock BlockType
+	// 级别
+	Level int
+	// 分数
+	Score int
+	// 已消除的行数
+	ClearLines int
+}
+
+// FieldStatus 场上方块填充情况
+type FieldStatus [][]BlockType
+
+// Block 获取指定位置填充的方块类型
+func (f FieldStatus) Block(row, col int) (BlockType, bool) {
+	if row < 0 || len(f) <= row {
+		return 0, false
+	}
+	if col < 0 || len(f[row]) <= col {
+		return 0, false
+	}
+	return f[row][col], true
+}
+
+// Block 方块
+type Block struct {
+	// 方块类型
+	Type BlockType
+	// 方块位置
+	Row, Column int
+	// 方块方向
+	Dir BlockDir
+}
+
+// BlockType 方块类型
+type BlockType byte
+
+// BlockType 的枚举
+const (
+	BlockNone BlockType = iota
+	BlockI
+	BlockJ
+	BlockL
+	BlockO
+	BlockS
+	BlockT
+	BlockZ
+)
+
+// BlockDir 方块方向
+type BlockDir byte
+
+// BlockDir 的枚举
+const (
+	Dir1 BlockDir = iota
+	Dir2
+	Dir3
+	Dir4
+)
