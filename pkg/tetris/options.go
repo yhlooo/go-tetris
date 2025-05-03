@@ -61,3 +61,49 @@ type ScoreEvent struct {
 	// T-Spin
 	TSpin bool
 }
+
+// DefaultOptions 默认选项
+var DefaultOptions = Options{
+	Rows:          20,
+	Columns:       10,
+	HoldEnabled:   true,
+	InitialLevel:  1,
+	LinesPerLevel: 10,
+	SpeedController: func(level int) float64 {
+		switch level {
+		case 1:
+			return 1
+		case 2:
+			return 1.26102
+		case 3:
+			return 1.61862
+		case 4:
+			return 2.11536
+		case 5:
+			return 2.8158
+		case 6:
+			return 3.8166
+		case 7:
+			return 5.274
+		case 8:
+			return 7.416
+		case 9:
+			return 10.65
+		case 10:
+			return 15.588
+		case 11:
+			return 23.28
+		case 12:
+			return 35.4
+		case 13:
+			return 55.2
+		case 14:
+			return 87.6
+		default:
+			return 141.6
+		}
+	},
+	Frequency: 1000,
+	Scorer:    nil, // TODO: ...
+	RandSeed:  0,
+}

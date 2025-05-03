@@ -23,7 +23,8 @@ func NewTetris(opts Options) Tetris {
 		freq:     opts.Frequency,
 		speed:    opts.SpeedController,
 	}
-	t.field = NewField(opts.Rows, opts.Columns, t.newBlock(BlockNone))
+	t.field = NewField(opts.Rows, opts.Columns, nil)
+	t.field.ChangeActiveBlock(t.newBlock(BlockNone))
 	t.nextBlock = t.newBlockType()
 	return t
 }
@@ -63,6 +64,7 @@ func (t *defaultTetris) Start(ctx context.Context) error {
 
 		ctx, t.cancel = context.WithCancel(ctx)
 		go t.run(ctx)
+		t.sendFrame()
 		logr.FromContextOrDiscard(ctx).Info("started")
 	})
 	return err
@@ -100,6 +102,10 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 
 	t.lock.Lock()
 	defer t.lock.Unlock()
+
+	if t.pause {
+		return
+	}
 
 	changed := false
 	switch op {
@@ -173,6 +179,10 @@ func (t *defaultTetris) run(ctx context.Context) {
 		case <-t.ticker.C:
 		}
 
+		if t.pause {
+			continue
+		}
+
 		t.tickets++
 		t.lock.Lock()
 		speed := t.speed(t.level)
@@ -183,6 +193,7 @@ func (t *defaultTetris) run(ctx context.Context) {
 				t.pinBlock()
 				logger.V(1).Info("pin block")
 			}
+			t.sendFrame()
 			t.tickets = 0
 		}
 		t.lock.Unlock()
@@ -226,12 +237,16 @@ func (t *defaultTetris) newBlock(blockType BlockType) *Block {
 	}
 	rows, cols := t.field.Size()
 	col := cols/2 - 2
-	if blockType == BlockO {
+	row := rows - 3
+	switch blockType {
+	case BlockO:
 		col = cols/2 - 1
+		row = rows - 2
+	default:
 	}
 	return &Block{
 		Type:   blockType,
-		Row:    rows,
+		Row:    row,
 		Column: col,
 		Dir:    Dir1,
 	}
