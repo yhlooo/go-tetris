@@ -13,14 +13,14 @@ type Tetris interface {
 	// Stop 停止游戏
 	//
 	// 对于每个 Tetris 对象只能被调用一次
-	Stop(ctx context.Context) error
+	Stop(ctx context.Context)
 	// Pause 暂停游戏
-	Pause(ctx context.Context) error
+	Pause(ctx context.Context)
 	// Resume 继续游戏
-	Resume(ctx context.Context) error
+	Resume(ctx context.Context)
 
 	// Input 输入操作指令
-	Input(ctx context.Context, op Op) error
+	Input(ctx context.Context, op Op)
 
 	// Frames 获取帧通道
 	//
@@ -57,12 +57,8 @@ const (
 //
 // 包含某时刻游戏画面应显示的信息，如方块位置、得分等
 type Frame struct {
-	// 行列数
-	Rows, Columns int
-	// 场上方块填充情况，不含活跃方块
-	Field FieldStatus
-	// 活跃的方块
-	ActiveBlock Block
+	// 场上方块填充情况
+	Field FieldReader
 	// 暂存的方块
 	HoldingBlock *BlockType
 	// 下一个方块
@@ -74,53 +70,3 @@ type Frame struct {
 	// 已消除的行数
 	ClearLines int
 }
-
-// FieldStatus 场上方块填充情况
-type FieldStatus [][]BlockType
-
-// Block 获取指定位置填充的方块类型
-func (f FieldStatus) Block(row, col int) (BlockType, bool) {
-	if row < 0 || len(f) <= row {
-		return 0, false
-	}
-	if col < 0 || len(f[row]) <= col {
-		return 0, false
-	}
-	return f[row][col], true
-}
-
-// Block 方块
-type Block struct {
-	// 方块类型
-	Type BlockType
-	// 方块位置
-	Row, Column int
-	// 方块方向
-	Dir BlockDir
-}
-
-// BlockType 方块类型
-type BlockType byte
-
-// BlockType 的枚举
-const (
-	BlockNone BlockType = iota
-	BlockI
-	BlockJ
-	BlockL
-	BlockO
-	BlockS
-	BlockT
-	BlockZ
-)
-
-// BlockDir 方块方向
-type BlockDir byte
-
-// BlockDir 的枚举
-const (
-	Dir1 BlockDir = iota
-	Dir2
-	Dir3
-	Dir4
-)

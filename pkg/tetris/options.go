@@ -1,5 +1,7 @@
 package tetris
 
+import "time"
+
 // Options 游戏选项
 type Options struct {
 	// 行列数
@@ -16,6 +18,30 @@ type Options struct {
 	Frequency int
 	// 评分器
 	Scorer Scorer
+	// 随机数种子
+	RandSeed int64
+}
+
+// Complete 补全选项
+func (opts *Options) Complete() {
+	if opts.Rows == 0 {
+		opts.Rows = 20
+	}
+	if opts.Columns == 0 {
+		opts.Columns = 10
+	}
+	if opts.InitialLevel == 0 {
+		opts.InitialLevel = 1
+	}
+	if opts.LinesPerLevel == 0 {
+		opts.LinesPerLevel = 10
+	}
+	if opts.Frequency == 0 {
+		opts.Frequency = 1000
+	}
+	if opts.RandSeed == 0 {
+		opts.RandSeed = time.Now().UnixNano()
+	}
 }
 
 // SpeedController 返回指定级别下落速度（单位：格/s ）
