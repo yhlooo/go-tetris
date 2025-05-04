@@ -144,9 +144,9 @@ func paintLoop(
 				case tetris.BlockO:
 					fieldContent += "[:orange]  [:black]"
 				case tetris.BlockS:
-					fieldContent += "[:green]  [:black]"
+					fieldContent += "[:lightgreen]  [:black]"
 				case tetris.BlockT:
-					fieldContent += "[:purple]  [:black]"
+					fieldContent += "[:mediumpurple]  [:black]"
 				case tetris.BlockZ:
 					fieldContent += "[:red]  [:black]"
 				}
@@ -199,13 +199,13 @@ func paintBlock(blockType tetris.BlockType) string {
 `
 	case tetris.BlockS:
 		return `
-    [:green]    [:black]
-  [:green]    [:black]
+    [:lightgreen]    [:black]
+  [:lightgreen]    [:black]
 `
 	case tetris.BlockT:
 		return `
-    [:purple]  [:black]
-  [:purple]      [:black]
+    [:mediumpurple]  [:black]
+  [:mediumpurple]      [:black]
 `
 	case tetris.BlockZ:
 		return `
