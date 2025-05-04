@@ -21,6 +21,14 @@ type Tetris interface {
 	Pause(ctx context.Context)
 	// Resume 继续游戏
 	Resume(ctx context.Context)
+	// SetDebug 设置调试模式
+	SetDebug(enabled bool)
+	// Debug 返回是否调试模式
+	Debug() bool
+	// ChangeActiveBlockType 更换活跃方块类型
+	//
+	// 仅在调试模式下生效
+	ChangeActiveBlockType(blockType BlockType) error
 
 	// Input 输入操作指令
 	Input(ctx context.Context, op Op)
@@ -34,6 +42,8 @@ type Tetris interface {
 	//
 	// 每个 Tetris 对象只有一个通道，多次调用该方法返回的是同一通道
 	Frames() <-chan Frame
+	// CurrentFrame 获取当前帧
+	CurrentFrame() Frame
 }
 
 // GameState 游戏状态

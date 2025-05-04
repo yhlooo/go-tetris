@@ -109,7 +109,7 @@ func (f *Field) MoveActiveBlock(row, col int) bool {
 	f.active.Row += row
 	f.active.Column += col
 
-	if !f.isValid() {
+	if !f.IsValid() {
 		// 不合法，复原
 		f.active.Row -= row
 		f.active.Column -= col
@@ -133,7 +133,7 @@ func (f *Field) RotateActiveBlock(dir int) bool {
 	oldDir := f.active.Dir
 	f.active.Dir = BlockDir(int(oldDir)+dir) % 4
 
-	if !f.isValid() {
+	if !f.IsValid() {
 		// 不合法，复原
 		f.active.Dir = oldDir
 		return false
@@ -148,7 +148,7 @@ func (f *Field) RotateActiveBlock(dir int) bool {
 func (f *Field) ChangeActiveBlock(block *Block) bool {
 	oldActive := f.active
 	f.active = block
-	if !f.isValid() {
+	if !f.IsValid() {
 		f.active = oldActive
 		return false
 	}
@@ -191,10 +191,10 @@ func (f *Field) PinActiveBlock(newBlock *Block) (clearLines int, ok bool) {
 	return clearLines, f.ChangeActiveBlock(newBlock)
 }
 
-// isValid 是否合法
+// IsValid 是否合法
 //
 // 活跃方块没有超出左右和下边界且不与其他方块重合则返回 true ，否则返回 false
-func (f *Field) isValid() bool {
+func (f *Field) IsValid() bool {
 	if f.active == nil {
 		return true
 	}

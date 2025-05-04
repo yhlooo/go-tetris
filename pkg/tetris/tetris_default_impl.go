@@ -62,6 +62,7 @@ type defaultTetris struct {
 	linesPerLevel int
 	holdEnabled   bool
 
+	debug    bool
 	state    GameState
 	framesCh chan Frame
 }
@@ -122,6 +123,47 @@ func (t *defaultTetris) Resume(ctx context.Context) {
 	logr.FromContextOrDiscard(ctx).Info("resumed")
 }
 
+// SetDebug 设置调试模式
+func (t *defaultTetris) SetDebug(enabled bool) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	t.debug = enabled
+}
+
+// Debug 返回是否调试模式
+func (t *defaultTetris) Debug() bool {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	return t.debug
+}
+
+// ChangeActiveBlockType 更换活跃方块类型
+func (t *defaultTetris) ChangeActiveBlockType(blockType BlockType) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if !t.debug {
+		return fmt.Errorf("not in debug mode")
+	}
+	if t.state != StateRunning && t.state != StatePaused {
+		return fmt.Errorf("not in running or paused state: %s", t.state)
+	}
+
+	b := t.field.ActiveBlock()
+	oldType := b.Type
+	b.Type = blockType
+
+	// 不合法，还原
+	if !t.field.IsValid() {
+		b.Type = oldType
+		return fmt.Errorf("insufficient space")
+	}
+
+	t.sendFrame()
+
+	return nil
+}
+
 // Input 输入操作指令
 func (t *defaultTetris) Input(ctx context.Context, op Op) {
 	logger := logr.FromContextOrDiscard(ctx)
@@ -129,8 +171,8 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	if t.state != StateRunning {
-		logger.V(1).Info(fmt.Sprintf("ignore input %q, not running: %s", op, t.state))
+	if t.state != StateRunning && (!t.debug || t.state != StatePaused) {
+		logger.V(1).Info(fmt.Sprintf("ignore input %q: not running: %s", op, t.state))
 		return
 	}
 
@@ -203,6 +245,18 @@ func (t *defaultTetris) Frames() <-chan Frame {
 	return t.framesCh
 }
 
+// CurrentFrame 获取当前帧
+func (t *defaultTetris) CurrentFrame() Frame {
+	return Frame{
+		Field:        t.field,
+		HoldingBlock: t.holdingBlock,
+		NextBlocks:   t.nextBlocks[:len(t.nextBlocks)-1],
+		Level:        t.level,
+		Score:        t.score,
+		ClearLines:   t.clearLines,
+	}
+}
+
 // run 运行
 func (t *defaultTetris) run(ctx context.Context) {
 	logger := logr.FromContextOrDiscard(ctx)
@@ -255,14 +309,7 @@ func (t *defaultTetris) pinBlock() {
 // sendFrame 发送帧
 func (t *defaultTetris) sendFrame() bool {
 	select {
-	case t.framesCh <- Frame{
-		Field:        t.field,
-		HoldingBlock: t.holdingBlock,
-		NextBlocks:   t.nextBlocks[:len(t.nextBlocks)-1],
-		Level:        t.level,
-		Score:        t.score,
-		ClearLines:   t.clearLines,
-	}:
+	case t.framesCh <- t.CurrentFrame():
 	default:
 		return false
 	}
