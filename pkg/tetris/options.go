@@ -10,6 +10,8 @@ type Options struct {
 	HoldEnabled bool
 	// 初始级别
 	InitialLevel int
+	// 提示的下个方块数量
+	NextBlock int
 	// 每级别需要消除多少行
 	LinesPerLevel int
 	// 下落速度控制器
@@ -74,6 +76,7 @@ var DefaultOptions = Options{
 	Columns:         10,
 	HoldEnabled:     true,
 	InitialLevel:    1,
+	NextBlock:       3,
 	LinesPerLevel:   10,
 	SpeedController: DefaultSpeedController,
 	Frequency:       1000,

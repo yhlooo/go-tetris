@@ -111,8 +111,8 @@ type Frame struct {
 	Field FieldReader
 	// 暂存的方块
 	HoldingBlock *BlockType
-	// 下一个方块
-	NextBlock BlockType
+	// 下几个方块
+	NextBlocks []BlockType
 	// 级别
 	Level int
 	// 分数

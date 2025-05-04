@@ -26,12 +26,15 @@ func NewTetris(opts Options) Tetris {
 		speed:         opts.SpeedController,
 		scorer:        opts.Scorer,
 		linesPerLevel: opts.LinesPerLevel,
+		holdEnabled:   opts.HoldEnabled,
 
 		state:    StatePending,
 		framesCh: make(chan Frame, framesChLen),
 	}
 	t.field = NewField(opts.Rows, opts.Columns, t.newBlock(BlockNone))
-	t.nextBlock = t.newBlockType()
+	for i := 0; i < opts.NextBlock+1; i++ {
+		t.nextBlocks = append(t.nextBlocks, t.newBlockType())
+	}
 	return t
 }
 
@@ -43,7 +46,7 @@ type defaultTetris struct {
 
 	rows, cols   int
 	field        *Field
-	nextBlock    BlockType
+	nextBlocks   []BlockType
 	holdingBlock *BlockType
 	holed        bool
 	level        int
@@ -57,6 +60,7 @@ type defaultTetris struct {
 	tickets       int64
 	scorer        Scorer
 	linesPerLevel int
+	holdEnabled   bool
 
 	state    GameState
 	framesCh chan Frame
@@ -166,15 +170,15 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 		logger.V(1).Info("pin block")
 		changed = true
 	case OpHold:
-		if !t.holed {
+		if !t.holed && t.holdEnabled {
 			oldActive := t.field.ActiveBlock().Type
 			var ok bool
 			if t.holdingBlock != nil {
 				ok = t.field.ChangeActiveBlock(t.newBlock(*t.holdingBlock))
 			} else {
-				ok = t.field.ChangeActiveBlock(t.newBlock(t.nextBlock))
+				ok = t.field.ChangeActiveBlock(t.newBlock(t.nextBlocks[0]))
 				if ok {
-					t.nextBlock = t.newBlockType()
+					t.nextBlocks = append(t.nextBlocks[1:], t.newBlockType())
 				}
 			}
 			if ok {
@@ -237,14 +241,14 @@ func (t *defaultTetris) run(ctx context.Context) {
 
 // pinBlock 钉住当前活跃方块
 func (t *defaultTetris) pinBlock() {
-	clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlock))
+	clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlocks[0]))
 	t.score += t.scorer(t.level, ScoreEvent{ClearLines: clearLines})
 	t.clearLines += clearLines
 	t.level = t.clearLines/t.linesPerLevel + 1
 	if !ok {
 		t.state = StateFinished
 	}
-	t.nextBlock = t.newBlockType()
+	t.nextBlocks = append(t.nextBlocks[1:], t.newBlockType())
 	t.holed = false
 }
 
@@ -254,7 +258,7 @@ func (t *defaultTetris) sendFrame() bool {
 	case t.framesCh <- Frame{
 		Field:        t.field,
 		HoldingBlock: t.holdingBlock,
-		NextBlock:    t.nextBlock,
+		NextBlocks:   t.nextBlocks[:len(t.nextBlocks)-1],
 		Level:        t.level,
 		Score:        t.score,
 		ClearLines:   t.clearLines,

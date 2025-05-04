@@ -13,7 +13,7 @@ import (
 
 func main() {
 	holdBox := tview.NewTextView()
-	holdBox.SetBorder(true).SetTitle("Hold")
+	holdBox.SetDynamicColors(true).SetBorder(true).SetTitle("Hold")
 	scoreBox := tview.NewTextView()
 	scoreBox.SetBorder(true).SetTitle("Score")
 	levelBox := tview.NewTextView()
@@ -23,7 +23,7 @@ func main() {
 	fieldBox := tview.NewTextView()
 	fieldBox.SetDynamicColors(true).SetBorder(true)
 	nextBox := tview.NewTextView()
-	nextBox.SetBorder(true).SetTitle("Next")
+	nextBox.SetDynamicColors(true).SetBorder(true).SetTitle("Next")
 
 	flex := tview.NewFlex().
 		AddItem(
@@ -136,13 +136,13 @@ func paintLoop(
 				case tetris.BlockNone:
 					fieldContent += "  "
 				case tetris.BlockI:
-					fieldContent += "[:lightcyan]  [:black]"
+					fieldContent += "[:darkcyan]  [:black]"
 				case tetris.BlockJ:
 					fieldContent += "[:blue]  [:black]"
 				case tetris.BlockL:
-					fieldContent += "[:orange]  [:black]"
+					fieldContent += "[:darkorange]  [:black]"
 				case tetris.BlockO:
-					fieldContent += "[:yellow]  [:black]"
+					fieldContent += "[:orange]  [:black]"
 				case tetris.BlockS:
 					fieldContent += "[:green]  [:black]"
 				case tetris.BlockT:
@@ -157,7 +157,7 @@ func paintLoop(
 
 		holdBox.Clear()
 		if frame.HoldingBlock != nil {
-			_, _ = fmt.Fprintf(holdBox, "%s", frame.HoldingBlock)
+			_, _ = fmt.Fprint(holdBox, paintBlock(*frame.HoldingBlock))
 		}
 		scoreBox.Clear()
 		_, _ = fmt.Fprintf(scoreBox, "%d", frame.Score)
@@ -166,10 +166,54 @@ func paintLoop(
 		linesBox.Clear()
 		_, _ = fmt.Fprintf(linesBox, "%d", frame.ClearLines)
 		nextBox.Clear()
-		_, _ = fmt.Fprintf(nextBox, "%s", frame.NextBlock)
+		for _, b := range frame.NextBlocks {
+			_, _ = fmt.Fprint(nextBox, paintBlock(b))
+		}
 
 		app.Draw()
 	}
+}
+
+func paintBlock(blockType tetris.BlockType) string {
+	switch blockType {
+	case tetris.BlockNone:
+	case tetris.BlockI:
+		return `
+
+ [:darkcyan]        [:black]
+`
+	case tetris.BlockJ:
+		return `
+  [:blue]  [:black]
+  [:blue]      [:black]
+`
+	case tetris.BlockL:
+		return `
+      [:darkorange]  [:black]
+  [:darkorange]      [:black]
+`
+	case tetris.BlockO:
+		return `
+   [:orange]    [:black]
+   [:orange]    [:black]
+`
+	case tetris.BlockS:
+		return `
+    [:green]    [:black]
+  [:green]    [:black]
+`
+	case tetris.BlockT:
+		return `
+    [:purple]  [:black]
+  [:purple]      [:black]
+`
+	case tetris.BlockZ:
+		return `
+  [:red]    [:black]
+    [:red]    [:black]
+`
+	}
+	return ""
 }
 
 // clearScreen 清空画面
