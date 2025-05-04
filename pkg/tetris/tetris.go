@@ -2,10 +2,13 @@ package tetris
 
 import (
 	"context"
+	"fmt"
 )
 
 // Tetris 游戏实例
 type Tetris interface {
+	// State 返回当前游戏状态
+	State() GameState
 	// Start 开始游戏
 	//
 	// 对于每个 Tetris 对象只能被调用一次
@@ -33,6 +36,32 @@ type Tetris interface {
 	Frames() <-chan Frame
 }
 
+// GameState 游戏状态
+type GameState byte
+
+// GameState 的枚举值
+const (
+	StatePending GameState = iota
+	StateRunning
+	StatePaused
+	StateFinished
+)
+
+// String 返回字符串表示
+func (s GameState) String() string {
+	switch s {
+	case StatePending:
+		return "Pending"
+	case StateRunning:
+		return "Running"
+	case StatePaused:
+		return "Paused"
+	case StateFinished:
+		return "Finished"
+	}
+	return "Invalid"
+}
+
 // Op 操作指令
 type Op byte
 
@@ -52,6 +81,27 @@ const (
 	// OpHold 暂存当前方块
 	OpHold
 )
+
+// String 返回字符串表示
+func (op Op) String() string {
+	switch op {
+	case OpMoveRight:
+		return "MoveRight"
+	case OpMoveLeft:
+		return "MoveLeft"
+	case OpRotateRight:
+		return "RotateRight"
+	case OpRotateLeft:
+		return "RotateLeft"
+	case OpSoftDrop:
+		return "SoftDrop"
+	case OpHardDrop:
+		return "HardDrop"
+	case OpHold:
+		return "Hold"
+	}
+	return fmt.Sprintf("Invalid(%d)", op)
+}
 
 // Frame 帧
 //

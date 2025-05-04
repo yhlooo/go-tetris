@@ -121,7 +121,7 @@ func (f *Field) MoveActiveBlock(row, col int) bool {
 
 // RotateActiveBlock 旋转活跃方块
 //
-// 若旋转后方块没有超出边界且没有与其他方块重合则移动成功并返回 true ，否则不旋转并返回 false
+// 若旋转后方块没有超出边界且没有与其他方块重合则旋转成功并返回 true ，否则不旋转并返回 false
 //
 // TODO: 暂不支持旋转后通过少量平移避开边界或其他方块
 func (f *Field) RotateActiveBlock(dir int) bool {
@@ -143,21 +143,53 @@ func (f *Field) RotateActiveBlock(dir int) bool {
 }
 
 // ChangeActiveBlock 更换活跃方块
-func (f *Field) ChangeActiveBlock(block *Block) {
+//
+// 若更换后方块没有超出边界且没有与其他方块重合则更换成功并返回 true ，否则不更换并返回 false
+func (f *Field) ChangeActiveBlock(block *Block) bool {
+	oldActive := f.active
 	f.active = block
+	if !f.isValid() {
+		f.active = oldActive
+		return false
+	}
+	return true
 }
 
-// PinActiveBlock 钉住当前活跃方块并用新方块替换
-func (f *Field) PinActiveBlock(newBlock *Block) {
-	if f.active == nil {
-		f.active = newBlock
-		return
+// PinActiveBlock 钉住当前活跃方块清除填满的行然后用新方块替换活跃方块
+//
+// 若更换方块完后活跃方块没有超出边界且没有与其他方块重合则操作成功并返回 true ，否则不更换方块（但仍执行钉住和清除操作）并返回 false
+func (f *Field) PinActiveBlock(newBlock *Block) bool {
+	// 固定活跃方块
+	if f.active != nil {
+		for _, cell := range f.active.Cells() {
+			_ = f.SetBlock(cell.Row(), cell.Column(), f.active.Type)
+		}
 	}
 
-	for _, cell := range f.active.Cells() {
-		_ = f.SetBlock(cell.Row(), cell.Column(), f.active.Type)
+	// 清除填满的行
+	clearLines := 0
+	for i := 0; i < len(f.filled); {
+		row := f.filled[i]
+		full := true
+		for _, cell := range row {
+			if cell == BlockNone {
+				full = false
+				break
+			}
+		}
+		if full {
+			f.filled = append(f.filled[:i], f.filled[i+1:]...)
+			clearLines++
+		} else {
+			i++
+		}
 	}
-	f.active = newBlock
+	for i := 0; i < clearLines; i++ {
+		f.filled = append(f.filled, make([]BlockType, f.cols))
+	}
+
+	// 更换活跃方块
+	return f.ChangeActiveBlock(newBlock)
 }
 
 // isValid 是否合法

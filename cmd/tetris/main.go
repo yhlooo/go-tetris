@@ -44,27 +44,30 @@ func main() {
 
 	ctx := context.Background()
 	var t tetris.Tetris
-	state := gameNone
 	app := tview.NewApplication()
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch state {
-		case gameNone:
+		if t == nil {
 			switch event.Key() {
 			case tcell.KeyEnter:
 				// 开始游戏
 				t = tetris.NewTetris(tetris.DefaultOptions)
+				go paintLoop(t.Frames(), app, holdBox, scoreBox, levelBox, linesBox, nextBox, fieldBox)
 				if err := t.Start(ctx); err != nil {
 					log.Fatalf("start tetris error: %v", err)
 				}
-				go paintLoop(t.Frames(), app, holdBox, scoreBox, levelBox, linesBox, nextBox, fieldBox)
-				state = gameRunning
 			}
-		case gameRunning:
+			return event
+		}
+		switch t.State() {
+		case tetris.StatePending:
+			if err := t.Start(ctx); err != nil {
+				log.Fatalf("start tetris error: %v", err)
+			}
+		case tetris.StateRunning:
 			switch event.Key() {
 			case tcell.KeyEsc:
 				// 暂停游戏
 				t.Pause(ctx)
-				state = gamePaused
 			case tcell.KeyUp:
 				t.Input(ctx, tetris.OpRotateRight)
 			case tcell.KeyDown:
@@ -92,21 +95,22 @@ func main() {
 				}
 			default:
 			}
-		case gamePaused:
+		case tetris.StatePaused:
 			switch event.Key() {
 			case tcell.KeyEnter:
 				// 继续游戏
 				t.Resume(ctx)
-				state = gameRunning
 			case tcell.KeyEsc:
 				// 结束游戏
 				t.Stop(ctx)
-				state = gameNone
+				clearScreen(holdBox, scoreBox, levelBox, linesBox, nextBox, fieldBox)
+				t = nil
 			}
-		case gameFinished:
+		case tetris.StateFinished:
 			switch event.Key() {
 			case tcell.KeyEnter, tcell.KeyEsc:
-				state = gameNone
+				clearScreen(holdBox, scoreBox, levelBox, linesBox, nextBox, fieldBox)
+				t = nil
 			}
 		}
 
@@ -122,8 +126,7 @@ func main() {
 func paintLoop(
 	ch <-chan tetris.Frame,
 	app *tview.Application,
-	holdBox, scoreBox, levelBox, linesBox, nextBox *tview.TextView,
-	fieldBox *tview.TextView,
+	holdBox, scoreBox, levelBox, linesBox, nextBox, fieldBox *tview.TextView,
 ) {
 	for frame := range ch {
 		fieldContent := ""
@@ -154,7 +157,7 @@ func paintLoop(
 
 		holdBox.Clear()
 		if frame.HoldingBlock != nil {
-			_, _ = fmt.Fprintf(holdBox, "%d", frame.HoldingBlock)
+			_, _ = fmt.Fprintf(holdBox, "%s", frame.HoldingBlock)
 		}
 		scoreBox.Clear()
 		_, _ = fmt.Fprintf(scoreBox, "%d", frame.Score)
@@ -163,17 +166,18 @@ func paintLoop(
 		linesBox.Clear()
 		_, _ = fmt.Fprintf(linesBox, "%d", frame.ClearLines)
 		nextBox.Clear()
-		_, _ = fmt.Fprintf(nextBox, "%d", frame.NextBlock)
+		_, _ = fmt.Fprintf(nextBox, "%s", frame.NextBlock)
 
 		app.Draw()
 	}
 }
 
-type gameState byte
-
-const (
-	gameNone gameState = iota
-	gameRunning
-	gamePaused
-	gameFinished
-)
+// clearScreen 清空画面
+func clearScreen(holdBox, scoreBox, levelBox, linesBox, nextBox, fieldBox *tview.TextView) {
+	holdBox.Clear()
+	scoreBox.Clear()
+	levelBox.Clear()
+	linesBox.Clear()
+	nextBox.Clear()
+	fieldBox.Clear()
+}

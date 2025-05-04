@@ -16,15 +16,19 @@ const framesChLen = 16
 func NewTetris(opts Options) Tetris {
 	opts.Complete()
 	t := &defaultTetris{
-		rand:     rand.New(rand.NewSource(opts.RandSeed)),
+		rows:  opts.Rows,
+		cols:  opts.Columns,
+		level: opts.InitialLevel,
+
+		rand:   rand.New(rand.NewSource(opts.RandSeed)),
+		ticker: time.NewTicker(time.Second / time.Duration(opts.Frequency)),
+		freq:   opts.Frequency,
+		speed:  opts.SpeedController,
+
+		state:    StatePending,
 		framesCh: make(chan Frame, framesChLen),
-		level:    opts.InitialLevel,
-		ticker:   time.NewTicker(time.Second / time.Duration(opts.Frequency)),
-		freq:     opts.Frequency,
-		speed:    opts.SpeedController,
 	}
-	t.field = NewField(opts.Rows, opts.Columns, nil)
-	t.field.ChangeActiveBlock(t.newBlock(BlockNone))
+	t.field = NewField(opts.Rows, opts.Columns, t.newBlock(BlockNone))
 	t.nextBlock = t.newBlockType()
 	return t
 }
@@ -35,6 +39,7 @@ type defaultTetris struct {
 	startOnce sync.Once
 	cancel    context.CancelFunc
 
+	rows, cols   int
 	field        *Field
 	nextBlock    BlockType
 	holdingBlock *BlockType
@@ -49,11 +54,16 @@ type defaultTetris struct {
 	speed   SpeedController
 	tickets int64
 
-	pause    bool
+	state    GameState
 	framesCh chan Frame
 }
 
 var _ Tetris = (*defaultTetris)(nil)
+
+// State 返回当前游戏状态
+func (t *defaultTetris) State() GameState {
+	return t.state
+}
 
 // Start 开始游戏
 func (t *defaultTetris) Start(ctx context.Context) error {
@@ -63,6 +73,7 @@ func (t *defaultTetris) Start(ctx context.Context) error {
 		defer t.lock.Unlock()
 
 		ctx, t.cancel = context.WithCancel(ctx)
+		t.state = StateRunning
 		go t.run(ctx)
 		t.sendFrame()
 		logr.FromContextOrDiscard(ctx).Info("started")
@@ -77,6 +88,7 @@ func (t *defaultTetris) Stop(ctx context.Context) {
 	if t.cancel != nil {
 		t.cancel()
 	}
+	t.state = StateFinished
 	logr.FromContextOrDiscard(ctx).Info("stoped")
 }
 
@@ -84,7 +96,10 @@ func (t *defaultTetris) Stop(ctx context.Context) {
 func (t *defaultTetris) Pause(ctx context.Context) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	t.pause = true
+	if t.state != StateRunning {
+		return
+	}
+	t.state = StatePaused
 	logr.FromContextOrDiscard(ctx).Info("paused")
 }
 
@@ -92,7 +107,10 @@ func (t *defaultTetris) Pause(ctx context.Context) {
 func (t *defaultTetris) Resume(ctx context.Context) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	t.pause = false
+	if t.state != StatePaused {
+		return
+	}
+	t.state = StateRunning
 	logr.FromContextOrDiscard(ctx).Info("resumed")
 }
 
@@ -103,7 +121,8 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	if t.pause {
+	if t.state != StateRunning {
+		logger.V(1).Info(fmt.Sprintf("ignore input %q, not running: %s", op, t.state))
 		return
 	}
 
@@ -139,16 +158,22 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 		changed = true
 	case OpHold:
 		if !t.holed {
-			logger.V(1).Info("hold block")
 			oldActive := t.field.ActiveBlock().Type
+			var ok bool
 			if t.holdingBlock != nil {
-				t.field.ChangeActiveBlock(t.newBlock(*t.holdingBlock))
+				ok = t.field.ChangeActiveBlock(t.newBlock(*t.holdingBlock))
 			} else {
-				t.field.ChangeActiveBlock(t.newBlock(t.nextBlock))
-				t.nextBlock = t.newBlockType()
+				ok = t.field.ChangeActiveBlock(t.newBlock(t.nextBlock))
+				if ok {
+					t.nextBlock = t.newBlockType()
+				}
 			}
-			t.holdingBlock = &oldActive
-			changed = true
+			if ok {
+				t.holdingBlock = &oldActive
+				t.holed = true
+			}
+			changed = ok
+			logger.V(1).Info(fmt.Sprintf("hold block, ret: %t", ok))
 		} else {
 			logger.V(1).Info("can not hold block: block already holed")
 		}
@@ -179,7 +204,7 @@ func (t *defaultTetris) run(ctx context.Context) {
 		case <-t.ticker.C:
 		}
 
-		if t.pause {
+		if t.state != StateRunning {
 			continue
 		}
 
@@ -203,7 +228,10 @@ func (t *defaultTetris) run(ctx context.Context) {
 
 // pinBlock 钉住当前活跃方块
 func (t *defaultTetris) pinBlock() {
-	t.field.PinActiveBlock(t.newBlock(t.nextBlock))
+	ok := t.field.PinActiveBlock(t.newBlock(t.nextBlock))
+	if !ok {
+		t.state = StateFinished
+	}
 	t.nextBlock = t.newBlockType()
 	t.holed = false
 }
@@ -235,15 +263,17 @@ func (t *defaultTetris) newBlock(blockType BlockType) *Block {
 	if blockType == BlockNone {
 		blockType = t.newBlockType()
 	}
-	rows, cols := t.field.Size()
-	col := cols/2 - 2
-	row := rows - 3
+
+	// 确定位置，放在居中上方刚好露出完整方块的位置
+	col := t.cols/2 - 2
+	row := t.rows - 3
 	switch blockType {
 	case BlockO:
-		col = cols/2 - 1
-		row = rows - 2
+		col = t.cols/2 - 1
+		row = t.rows - 2
 	default:
 	}
+
 	return &Block{
 		Type:   blockType,
 		Row:    row,

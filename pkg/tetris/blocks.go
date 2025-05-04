@@ -1,5 +1,7 @@
 package tetris
 
+import "fmt"
+
 // Block 方块
 type Block struct {
 	// 方块类型
@@ -24,6 +26,29 @@ const (
 	BlockT
 	BlockZ
 )
+
+// String 返回字符串表示
+func (t BlockType) String() string {
+	switch t {
+	case BlockNone:
+		return "None"
+	case BlockI:
+		return "I"
+	case BlockJ:
+		return "J"
+	case BlockL:
+		return "L"
+	case BlockO:
+		return "O"
+	case BlockS:
+		return "S"
+	case BlockT:
+		return "T"
+	case BlockZ:
+		return "Z"
+	}
+	return fmt.Sprintf("Invalid(%d)", t)
+}
 
 // BlockDir 方块方向
 type BlockDir byte
