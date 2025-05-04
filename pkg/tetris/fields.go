@@ -158,7 +158,7 @@ func (f *Field) ChangeActiveBlock(block *Block) bool {
 // PinActiveBlock 钉住当前活跃方块清除填满的行然后用新方块替换活跃方块
 //
 // 若更换方块完后活跃方块没有超出边界且没有与其他方块重合则操作成功并返回 true ，否则不更换方块（但仍执行钉住和清除操作）并返回 false
-func (f *Field) PinActiveBlock(newBlock *Block) bool {
+func (f *Field) PinActiveBlock(newBlock *Block) (clearLines int, ok bool) {
 	// 固定活跃方块
 	if f.active != nil {
 		for _, cell := range f.active.Cells() {
@@ -167,7 +167,6 @@ func (f *Field) PinActiveBlock(newBlock *Block) bool {
 	}
 
 	// 清除填满的行
-	clearLines := 0
 	for i := 0; i < len(f.filled); {
 		row := f.filled[i]
 		full := true
@@ -189,7 +188,7 @@ func (f *Field) PinActiveBlock(newBlock *Block) bool {
 	}
 
 	// 更换活跃方块
-	return f.ChangeActiveBlock(newBlock)
+	return clearLines, f.ChangeActiveBlock(newBlock)
 }
 
 // isValid 是否合法

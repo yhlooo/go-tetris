@@ -20,10 +20,12 @@ func NewTetris(opts Options) Tetris {
 		cols:  opts.Columns,
 		level: opts.InitialLevel,
 
-		rand:   rand.New(rand.NewSource(opts.RandSeed)),
-		ticker: time.NewTicker(time.Second / time.Duration(opts.Frequency)),
-		freq:   opts.Frequency,
-		speed:  opts.SpeedController,
+		rand:          rand.New(rand.NewSource(opts.RandSeed)),
+		ticker:        time.NewTicker(time.Second / time.Duration(opts.Frequency)),
+		freq:          opts.Frequency,
+		speed:         opts.SpeedController,
+		scorer:        opts.Scorer,
+		linesPerLevel: opts.LinesPerLevel,
 
 		state:    StatePending,
 		framesCh: make(chan Frame, framesChLen),
@@ -48,11 +50,13 @@ type defaultTetris struct {
 	score        int
 	clearLines   int
 
-	rand    *rand.Rand
-	ticker  *time.Ticker
-	freq    int
-	speed   SpeedController
-	tickets int64
+	rand          *rand.Rand
+	ticker        *time.Ticker
+	freq          int
+	speed         SpeedController
+	tickets       int64
+	scorer        Scorer
+	linesPerLevel int
 
 	state    GameState
 	framesCh chan Frame
@@ -145,13 +149,18 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 		if ok := t.field.MoveActiveBlock(-1, 0); !ok {
 			t.pinBlock()
 			logger.V(1).Info("pin block")
+		} else {
+			t.score += t.scorer(t.level, ScoreEvent{SoftDrop: 1})
 		}
 		t.tickets = 0
 		changed = true
 	case OpHardDrop:
 		logger.V(1).Info("hard drop")
+		dropLines := 0
 		for t.field.MoveActiveBlock(-1, 0) {
+			dropLines++
 		}
+		t.score += t.scorer(t.level, ScoreEvent{HardDrop: dropLines})
 		t.pinBlock()
 		t.tickets = 0
 		logger.V(1).Info("pin block")
@@ -228,7 +237,10 @@ func (t *defaultTetris) run(ctx context.Context) {
 
 // pinBlock 钉住当前活跃方块
 func (t *defaultTetris) pinBlock() {
-	ok := t.field.PinActiveBlock(t.newBlock(t.nextBlock))
+	clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlock))
+	t.score += t.scorer(t.level, ScoreEvent{ClearLines: clearLines})
+	t.clearLines += clearLines
+	t.level = t.clearLines/t.linesPerLevel + 1
 	if !ok {
 		t.state = StateFinished
 	}
