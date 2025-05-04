@@ -20,13 +20,17 @@ func NewTetris(opts Options) Tetris {
 		cols:  opts.Columns,
 		level: opts.InitialLevel,
 
-		rand:          rand.New(rand.NewSource(opts.RandSeed)),
-		ticker:        time.NewTicker(time.Second / time.Duration(opts.Frequency)),
-		freq:          opts.Frequency,
-		speed:         opts.SpeedController,
-		scorer:        opts.Scorer,
+		holdEnabled: opts.HoldEnabled,
+
+		rand: rand.New(rand.NewSource(opts.RandSeed)),
+
 		linesPerLevel: opts.LinesPerLevel,
-		holdEnabled:   opts.HoldEnabled,
+		ticker:        time.NewTicker(time.Second / time.Duration(opts.Frequency)),
+		speed:         opts.SpeedController,
+		freq:          opts.Frequency,
+
+		scorer:         opts.Scorer,
+		rotationSystem: opts.RotationSystem,
 
 		state:    StatePending,
 		framesCh: make(chan Frame, framesChLen),
@@ -48,19 +52,25 @@ type defaultTetris struct {
 	field        *Field
 	nextBlocks   []BlockType
 	holdingBlock *BlockType
-	holed        bool
 	level        int
 	score        int
 	clearLines   int
 
-	rand          *rand.Rand
-	ticker        *time.Ticker
-	freq          int
-	speed         SpeedController
-	tickets       int64
-	scorer        Scorer
+	holed   bool
+	tickets int64
+	notMove bool
+
+	holdEnabled bool
+
+	rand *rand.Rand
+
 	linesPerLevel int
-	holdEnabled   bool
+	ticker        *time.Ticker
+	speed         SpeedController
+	freq          int
+
+	scorer         Scorer
+	rotationSystem RotationSystem
 
 	debug    bool
 	state    GameState
@@ -180,15 +190,27 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 	switch op {
 	case OpMoveRight:
 		changed = t.field.MoveActiveBlock(0, 1)
+		if changed {
+			t.notMove = false
+		}
 		logger.V(1).Info(fmt.Sprintf("move right, ret: %t", changed))
 	case OpMoveLeft:
 		changed = t.field.MoveActiveBlock(0, -1)
+		if changed {
+			t.notMove = false
+		}
 		logger.V(1).Info(fmt.Sprintf("move left, ret: %t", changed))
 	case OpRotateRight:
-		changed = t.field.RotateActiveBlock(1)
+		changed = t.rotationSystem.RotateRight(t.field)
+		if changed {
+			t.notMove = true
+		}
 		logger.V(1).Info(fmt.Sprintf("rotate right, ret: %t", changed))
 	case OpRotateLeft:
-		changed = t.field.RotateActiveBlock(-1)
+		changed = t.rotationSystem.RotateLeft(t.field)
+		if changed {
+			t.notMove = true
+		}
 		logger.V(1).Info(fmt.Sprintf("rotate left, ret: %t", changed))
 	case OpSoftDrop:
 		logger.V(1).Info("soft drop")
@@ -196,6 +218,7 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 			t.pinBlock()
 			logger.V(1).Info("pin block")
 		} else {
+			t.notMove = false
 			t.score += t.scorer(t.level, ScoreEvent{SoftDrop: 1})
 		}
 		t.tickets = 0
@@ -204,6 +227,7 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 		logger.V(1).Info("hard drop")
 		dropLines := 0
 		for t.field.MoveActiveBlock(-1, 0) {
+			t.notMove = false
 			dropLines++
 		}
 		t.score += t.scorer(t.level, ScoreEvent{HardDrop: dropLines})
@@ -226,6 +250,7 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 			if ok {
 				t.holdingBlock = &oldActive
 				t.holed = true
+				t.notMove = false
 			}
 			changed = ok
 			logger.V(1).Info(fmt.Sprintf("hold block, ret: %t", ok))
@@ -284,19 +309,20 @@ func (t *defaultTetris) run(ctx context.Context) {
 			if ok := t.field.MoveActiveBlock(-1, 0); !ok {
 				t.pinBlock()
 				logger.V(1).Info("pin block")
+			} else {
+				t.notMove = false
 			}
 			t.sendFrame()
 			t.tickets = 0
 		}
 		t.lock.Unlock()
-
 	}
 }
 
 // pinBlock 钉住当前活跃方块
 func (t *defaultTetris) pinBlock() {
-	clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlocks[0]))
-	t.score += t.scorer(t.level, ScoreEvent{ClearLines: clearLines})
+	tSpin, clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlocks[0]))
+	t.score += t.scorer(t.level, ScoreEvent{TSpin: tSpin && t.notMove, ClearLines: clearLines})
 	t.clearLines += clearLines
 	t.level = t.clearLines/t.linesPerLevel + 1
 	if !ok {
@@ -341,6 +367,6 @@ func (t *defaultTetris) newBlock(blockType BlockType) *Block {
 		Type:   blockType,
 		Row:    row,
 		Column: col,
-		Dir:    Dir1,
+		Dir:    Dir0,
 	}
 }

@@ -119,29 +119,6 @@ func (f *Field) MoveActiveBlock(row, col int) bool {
 	return true
 }
 
-// RotateActiveBlock 旋转活跃方块
-//
-// 若旋转后方块没有超出边界且没有与其他方块重合则旋转成功并返回 true ，否则不旋转并返回 false
-//
-// TODO: 暂不支持旋转后通过少量平移避开边界或其他方块
-func (f *Field) RotateActiveBlock(dir int) bool {
-	if f.active == nil {
-		return false
-	}
-
-	// 旋转
-	oldDir := f.active.Dir
-	f.active.Dir = BlockDir(int(oldDir)+dir) % 4
-
-	if !f.IsValid() {
-		// 不合法，复原
-		f.active.Dir = oldDir
-		return false
-	}
-
-	return true
-}
-
 // ChangeActiveBlock 更换活跃方块
 //
 // 若更换后方块没有超出边界且没有与其他方块重合则更换成功并返回 true ，否则不更换并返回 false
@@ -155,12 +132,33 @@ func (f *Field) ChangeActiveBlock(block *Block) bool {
 	return true
 }
 
+var tCorners = [4]Location{{0, 0}, {0, 2}, {2, 0}, {2, 2}}
+
 // PinActiveBlock 钉住当前活跃方块清除填满的行然后用新方块替换活跃方块
 //
-// 若更换方块完后活跃方块没有超出边界且没有与其他方块重合则操作成功并返回 true ，否则不更换方块（但仍执行钉住和清除操作）并返回 false
-func (f *Field) PinActiveBlock(newBlock *Block) (clearLines int, ok bool) {
+// 若更换方块完后活跃方块没有超出边界且没有与其他方块重合则操作成功并返回 ok=true ，否则不更换方块（但仍执行钉住和清除操作）并返回 ok=false
+func (f *Field) PinActiveBlock(newBlock *Block) (tSpin bool, clearLines int, ok bool) {
 	// 固定活跃方块
 	if f.active != nil {
+		if f.active.Type == BlockT {
+			// 检查是否 T-Spin
+			corners := 0
+			for _, cornerLoc := range tCorners {
+				row := f.active.Row + cornerLoc.Row()
+				col := f.active.Column + cornerLoc.Column()
+				if row < 0 || col < 0 || col >= f.cols {
+					corners++
+					continue
+				}
+				if cell, _ := f.Block(row, col); cell != BlockNone {
+					corners++
+					continue
+				}
+			}
+			if corners >= 3 {
+				tSpin = true
+			}
+		}
 		for _, cell := range f.active.Cells() {
 			_ = f.SetBlock(cell.Row(), cell.Column(), f.active.Type)
 		}
@@ -188,7 +186,7 @@ func (f *Field) PinActiveBlock(newBlock *Block) (clearLines int, ok bool) {
 	}
 
 	// 更换活跃方块
-	return clearLines, f.ChangeActiveBlock(newBlock)
+	return tSpin, clearLines, f.ChangeActiveBlock(newBlock)
 }
 
 // IsValid 是否合法

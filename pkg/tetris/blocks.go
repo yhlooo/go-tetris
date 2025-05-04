@@ -55,30 +55,32 @@ type BlockDir byte
 
 // BlockDir 的枚举
 const (
-	Dir1 BlockDir = iota
+	// Dir0 初始状态
+	Dir0 BlockDir = iota
+	// DirR 顺时针旋转 90 度
+	DirR
+	// Dir2 旋转 180 度
 	Dir2
-	Dir3
-	Dir4
+	// DirL 逆时针旋转 90 度
+	DirL
 )
 
-var (
-	// blockEdges 方块边缘
-	blockEdges = [7][4][4]int{
-		// I
-		{{2, 2, 0, 3}, {3, 0, 2, 2}, {1, 1, 0, 3}, {3, 0, 1, 1}},
-		// J
-		{{2, 1, 0, 2}, {2, 0, 1, 2}, {1, 0, 0, 2}, {2, 0, 0, 1}},
-		// L
-		{{2, 1, 0, 2}, {2, 0, 1, 2}, {1, 0, 0, 2}, {2, 0, 0, 1}},
-		// O
-		{{1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}},
-		// S
-		{{2, 1, 0, 2}, {2, 0, 1, 2}, {1, 0, 0, 2}, {2, 0, 0, 1}},
-		// T
-		{{2, 1, 0, 2}, {2, 0, 1, 2}, {1, 0, 0, 2}, {2, 0, 0, 1}},
-		// Z
-		{{2, 1, 0, 2}, {2, 0, 1, 2}, {1, 0, 0, 2}, {2, 0, 0, 1}},
+// String 返回字符串表示
+func (d BlockDir) String() string {
+	switch d {
+	case Dir0:
+		return "0"
+	case DirR:
+		return "R"
+	case Dir2:
+		return "2"
+	case DirL:
+		return "L"
 	}
+	return fmt.Sprintf("Invalid(%d)", d)
+}
+
+var (
 	// blockShapes 方块形状
 	blockShapes = [7][4][4]Location{
 		// I
@@ -132,18 +134,6 @@ var (
 		},
 	}
 )
-
-// Edge 获取方块边缘行列号
-func (b Block) Edge() (topRow, bottomRow, leftCol, rightCol int) {
-	// 获取相对方块定位点的偏移
-	if b.Type < 1 || b.Type > 7 || b.Dir < 0 || b.Dir > 3 {
-		return
-	}
-	edge := blockEdges[b.Type-1][b.Dir]
-
-	// 加上方块本身位置
-	return edge[0] + b.Row, edge[1] + b.Row, edge[2] + b.Column, edge[3] + b.Column
-}
 
 // Cells 获取方块各格坐标
 //

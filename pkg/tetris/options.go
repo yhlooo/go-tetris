@@ -6,22 +6,28 @@ import "time"
 type Options struct {
 	// 行列数
 	Rows, Columns int
+
 	// 是否开启暂存方块功能
 	HoldEnabled bool
-	// 初始级别
-	InitialLevel int
 	// 提示的下个方块数量
 	NextBlock int
+
+	// 随机数种子
+	RandSeed int64
+
+	// 初始级别
+	InitialLevel int
 	// 每级别需要消除多少行
 	LinesPerLevel int
 	// 下落速度控制器
 	SpeedController SpeedController
 	// 处理频率（单位： ticket/s ）
 	Frequency int
+
 	// 评分器
 	Scorer Scorer
-	// 随机数种子
-	RandSeed int64
+	// 旋转系统
+	RotationSystem RotationSystem
 }
 
 // Complete 补全选项
@@ -32,6 +38,11 @@ func (opts *Options) Complete() {
 	if opts.Columns == 0 {
 		opts.Columns = 10
 	}
+
+	if opts.RandSeed == 0 {
+		opts.RandSeed = time.Now().UnixNano()
+	}
+
 	if opts.InitialLevel == 0 {
 		opts.InitialLevel = 1
 	}
@@ -44,11 +55,12 @@ func (opts *Options) Complete() {
 	if opts.Frequency == 0 {
 		opts.Frequency = 1000
 	}
+
 	if opts.Scorer == nil {
 		opts.Scorer = DefaultScorer()
 	}
-	if opts.RandSeed == 0 {
-		opts.RandSeed = time.Now().UnixNano()
+	if opts.RotationSystem == nil {
+		opts.RotationSystem = SuperRotationSystem{}
 	}
 }
 
@@ -72,16 +84,21 @@ type ScoreEvent struct {
 
 // DefaultOptions 默认选项
 var DefaultOptions = Options{
-	Rows:            20,
-	Columns:         10,
-	HoldEnabled:     true,
+	Rows:    20,
+	Columns: 10,
+
+	HoldEnabled: true,
+	NextBlock:   3,
+
+	RandSeed: 0,
+
 	InitialLevel:    1,
-	NextBlock:       3,
 	LinesPerLevel:   10,
 	SpeedController: DefaultSpeedController,
 	Frequency:       1000,
-	Scorer:          DefaultScorer(),
-	RandSeed:        0,
+
+	Scorer:         DefaultScorer(),
+	RotationSystem: SuperRotationSystem{},
 }
 
 // DefaultSpeedController 默认速度控制器
