@@ -279,6 +279,7 @@ func (t *defaultTetris) CurrentFrame() Frame {
 		Level:        t.level,
 		Score:        t.score,
 		ClearLines:   t.clearLines,
+		GameOver:     t.state == StateFinished,
 	}
 }
 

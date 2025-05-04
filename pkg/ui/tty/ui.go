@@ -24,6 +24,7 @@ type GameUI struct {
 	fieldBox                                        *tview.TextView
 	nextBox                                         *tview.TextView
 	logBox                                          *tview.TextView
+	gameOverBox                                     *tview.TextView
 
 	gameCtx context.Context
 	tetris  tetris.Tetris
@@ -46,7 +47,8 @@ func (ui *GameUI) newRoot() tview.Primitive {
 		AddPage("about", ui.newAboutPage(), true, false).
 		AddPage("main", ui.newMainPage(), true, true).
 		AddPage("pause", ui.newPauseMenuPage(), true, false).
-		AddPage("menu", ui.newMainMenuPage(), true, true)
+		AddPage("menu", ui.newMainMenuPage(), true, true).
+		AddPage("over", ui.newGameOverPage(), true, false)
 
 	return tview.NewFlex().
 		AddItem(tview.NewBox(), 0, 1, false).
@@ -177,6 +179,28 @@ func (ui *GameUI) newPauseMenuPage() tview.Primitive {
 	return menuPage
 }
 
+// newGameOverPage 创建游戏结束页
+func (ui *GameUI) newGameOverPage() tview.Primitive {
+	ui.gameOverBox = tview.NewTextView()
+	ui.gameOverBox.
+		SetTextAlign(tview.AlignCenter).
+		SetBackgroundColor(tcell.ColorBlue).
+		SetBorder(true).
+		SetTitle("Game Over").
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			switch event.Key() {
+			case tcell.KeyEnter, tcell.KeyEsc:
+				ui.stopGame()
+			default:
+			}
+			return event
+		})
+
+	gameOverPage := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(ui.gameOverBox, 6, 1, true)
+	gameOverPage.SetBorderPadding(8, 0, 0, 0)
+	return gameOverPage
+}
+
 // newOptionsPage 创建选项页
 func (ui *GameUI) newOptionsPage() tview.Primitive {
 	optionsBox := tview.NewTextView()
@@ -270,71 +294,8 @@ func (ui *GameUI) stopGame() {
 	ui.gameCtx = nil
 	ui.tetris = nil
 	ui.clearGameInfo()
-	ui.pages.ShowPage("main")
+	ui.pages.SwitchToPage("main")
 	ui.pages.ShowPage("menu")
-}
-
-// paintGameLoop 绘制游戏画面的循环
-func (ui *GameUI) paintGameLoop(ch <-chan tetris.Frame) {
-	for frame := range ch {
-		ui.paintGameFrame(frame)
-		ui.app.Draw()
-	}
-}
-
-// paintGameFrame 绘制游戏一帧
-func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
-	fieldContent := ""
-	for i := 19; i >= 0; i-- {
-		for j := 0; j < 10; j++ {
-			switch frame.Field.BlockWithActiveBlock(i, j) {
-			case tetris.BlockNone:
-				fieldContent += "  "
-			case tetris.BlockI:
-				fieldContent += "[:darkcyan]  [:black]"
-			case tetris.BlockJ:
-				fieldContent += "[:blue]  [:black]"
-			case tetris.BlockL:
-				fieldContent += "[:darkorange]  [:black]"
-			case tetris.BlockO:
-				fieldContent += "[:orange]  [:black]"
-			case tetris.BlockS:
-				fieldContent += "[:lightgreen]  [:black]"
-			case tetris.BlockT:
-				fieldContent += "[:mediumpurple]  [:black]"
-			case tetris.BlockZ:
-				fieldContent += "[:red]  [:black]"
-			}
-		}
-	}
-	ui.fieldBox.Clear()
-	_, _ = fmt.Fprint(ui.fieldBox, fieldContent)
-
-	ui.holdBox.Clear()
-	if frame.HoldingBlock != nil {
-		_, _ = fmt.Fprint(ui.holdBox, paintTetrisBlock(*frame.HoldingBlock))
-	}
-	ui.scoreBox.Clear()
-	_, _ = fmt.Fprintf(ui.scoreBox, "%d", frame.Score)
-	ui.levelBox.Clear()
-	_, _ = fmt.Fprintf(ui.levelBox, "%d", frame.Level)
-	ui.linesBox.Clear()
-	_, _ = fmt.Fprintf(ui.linesBox, "%d", frame.ClearLines)
-	ui.nextBox.Clear()
-	for _, b := range frame.NextBlocks {
-		_, _ = fmt.Fprint(ui.nextBox, paintTetrisBlock(b))
-	}
-}
-
-// clearGameInfo 清除画面中的游戏信息
-func (ui *GameUI) clearGameInfo() {
-	ui.holdBox.Clear()
-	ui.scoreBox.Clear()
-	ui.levelBox.Clear()
-	ui.linesBox.Clear()
-	ui.stateBox.Clear()
-	ui.nextBox.Clear()
-	ui.fieldBox.Clear()
 }
 
 // handleGameInput 处理游戏输入
@@ -399,6 +360,75 @@ func (ui *GameUI) handleGameInput(event *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return event
+}
+
+// paintGameLoop 绘制游戏画面的循环
+func (ui *GameUI) paintGameLoop(ch <-chan tetris.Frame) {
+	for frame := range ch {
+		ui.paintGameFrame(frame)
+		ui.app.Draw()
+	}
+}
+
+// paintGameFrame 绘制游戏一帧
+func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
+	fieldContent := ""
+	for i := 19; i >= 0; i-- {
+		for j := 0; j < 10; j++ {
+			switch frame.Field.BlockWithActiveBlock(i, j) {
+			case tetris.BlockNone:
+				fieldContent += "  "
+			case tetris.BlockI:
+				fieldContent += "[:darkcyan]  [:black]"
+			case tetris.BlockJ:
+				fieldContent += "[:blue]  [:black]"
+			case tetris.BlockL:
+				fieldContent += "[:darkorange]  [:black]"
+			case tetris.BlockO:
+				fieldContent += "[:orange]  [:black]"
+			case tetris.BlockS:
+				fieldContent += "[:lightgreen]  [:black]"
+			case tetris.BlockT:
+				fieldContent += "[:mediumpurple]  [:black]"
+			case tetris.BlockZ:
+				fieldContent += "[:red]  [:black]"
+			}
+		}
+	}
+	ui.fieldBox.Clear()
+	_, _ = fmt.Fprint(ui.fieldBox, fieldContent)
+
+	ui.holdBox.Clear()
+	if frame.HoldingBlock != nil {
+		_, _ = fmt.Fprint(ui.holdBox, paintTetrisBlock(*frame.HoldingBlock))
+	}
+	ui.scoreBox.Clear()
+	_, _ = fmt.Fprintf(ui.scoreBox, "%d", frame.Score)
+	ui.levelBox.Clear()
+	_, _ = fmt.Fprintf(ui.levelBox, "%d", frame.Level)
+	ui.linesBox.Clear()
+	_, _ = fmt.Fprintf(ui.linesBox, "%d", frame.ClearLines)
+	ui.nextBox.Clear()
+	for _, b := range frame.NextBlocks {
+		_, _ = fmt.Fprint(ui.nextBox, paintTetrisBlock(b))
+	}
+
+	// 游戏结束
+	if frame.GameOver {
+		ui.gameOverBox.SetText(fmt.Sprintf("\nScore: %d\n\n(Press ENTER or ESC to continue)", frame.Score))
+		ui.pages.ShowPage("over")
+	}
+}
+
+// clearGameInfo 清除画面中的游戏信息
+func (ui *GameUI) clearGameInfo() {
+	ui.holdBox.Clear()
+	ui.scoreBox.Clear()
+	ui.levelBox.Clear()
+	ui.linesBox.Clear()
+	ui.stateBox.Clear()
+	ui.nextBox.Clear()
+	ui.fieldBox.Clear()
 }
 
 // paintTetrisBlock 绘制方块

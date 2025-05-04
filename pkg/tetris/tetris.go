@@ -129,4 +129,6 @@ type Frame struct {
 	Score int
 	// 已消除的行数
 	ClearLines int
+	// 游戏结束
+	GameOver bool
 }
