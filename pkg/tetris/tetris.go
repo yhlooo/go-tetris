@@ -16,11 +16,11 @@ type Tetris interface {
 	// Stop 停止游戏
 	//
 	// 对于每个 Tetris 对象只能被调用一次
-	Stop(ctx context.Context)
+	Stop() error
 	// Pause 暂停游戏
-	Pause(ctx context.Context)
+	Pause() error
 	// Resume 继续游戏
-	Resume(ctx context.Context)
+	Resume() error
 	// SetDebug 设置调试模式
 	SetDebug(enabled bool)
 	// Debug 返回是否调试模式
@@ -31,7 +31,7 @@ type Tetris interface {
 	ChangeActiveBlockType(blockType BlockType) error
 
 	// Input 输入操作指令
-	Input(ctx context.Context, op Op)
+	Input(op Op)
 
 	// Frames 获取帧通道
 	//

@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bombsimon/logrusr/v4"
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-logr/logr"
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
 
 	"github.com/yhlooo/go-tetris/pkg/tetris"
 )
@@ -26,9 +28,9 @@ type GameUI struct {
 	logBox                                          *tview.TextView
 	gameOverBox                                     *tview.TextView
 
-	gameCtx context.Context
-	tetris  tetris.Tetris
-	logger  logr.Logger
+	tetris       tetris.Tetris
+	logrusLogger *logrus.Logger
+	logger       logr.Logger
 }
 
 // Run 初始化并开始运行
@@ -78,7 +80,14 @@ func (ui *GameUI) newMainPage() tview.Primitive {
 	ui.nextBox = tview.NewTextView()
 	ui.nextBox.SetDynamicColors(true).SetBorder(true).SetTitle("Next")
 
-	ui.logBox = tview.NewTextView()
+	ui.logBox = tview.NewTextView().SetScrollable(true).SetDynamicColors(true)
+	ui.logrusLogger = logrus.New()
+	ui.logrusLogger.Out = ui.logBox
+	ui.logrusLogger.Formatter = &logFormatter{}
+	ui.logger = logrusr.New(ui.logrusLogger)
+	ui.logBox.SetChangedFunc(func() {
+		ui.logBox.ScrollToEnd()
+	})
 
 	leftFlex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(ui.holdBox, 6, 1, false).
@@ -281,10 +290,12 @@ see https://github.com/yhlooo/go-tetris .
 
 // startGame 开始游戏
 func (ui *GameUI) startGame() {
-	ui.gameCtx = logr.NewContext(context.Background(), ui.logger)
-	ui.tetris = tetris.NewTetris(tetris.DefaultOptions)
+	ui.logrusLogger.SetLevel(logrus.InfoLevel)
+	opts := tetris.DefaultOptions
+	opts.Logger = ui.logger
+	ui.tetris = tetris.NewTetris(opts)
 	go ui.paintGameLoop(ui.tetris.Frames())
-	if err := ui.tetris.Start(ui.gameCtx); err != nil {
+	if err := ui.tetris.Start(context.Background()); err != nil {
 		ui.logger.Error(err, "start tetris error")
 		return
 	}
@@ -293,7 +304,7 @@ func (ui *GameUI) startGame() {
 
 // pauseGame 暂停游戏
 func (ui *GameUI) pauseGame() {
-	ui.tetris.Pause(ui.gameCtx)
+	_ = ui.tetris.Pause()
 	if !ui.tetris.Debug() {
 		// 清空显示
 		ui.holdBox.Clear()
@@ -305,15 +316,14 @@ func (ui *GameUI) pauseGame() {
 
 // resumeGame 继续游戏
 func (ui *GameUI) resumeGame() {
-	ui.tetris.Resume(ui.gameCtx)
+	_ = ui.tetris.Resume()
 	ui.paintGameFrame(ui.tetris.CurrentFrame())
 	ui.pages.SwitchToPage("main")
 }
 
 // stopGame 结束游戏
 func (ui *GameUI) stopGame() {
-	ui.tetris.Stop(ui.gameCtx)
-	ui.gameCtx = nil
+	_ = ui.tetris.Stop()
 	ui.tetris = nil
 	ui.clearGameInfo()
 	ui.pages.SwitchToPage("main")
@@ -334,34 +344,37 @@ func (ui *GameUI) handleGameInput(event *tcell.EventKey) *tcell.EventKey {
 			ui.pauseGame()
 		}
 	case tcell.KeyUp:
-		ui.tetris.Input(ui.gameCtx, tetris.OpRotateRight)
+		ui.tetris.Input(tetris.OpRotateRight)
 	case tcell.KeyDown:
-		ui.tetris.Input(ui.gameCtx, tetris.OpSoftDrop)
+		ui.tetris.Input(tetris.OpSoftDrop)
 	case tcell.KeyLeft:
-		ui.tetris.Input(ui.gameCtx, tetris.OpMoveLeft)
+		ui.tetris.Input(tetris.OpMoveLeft)
 	case tcell.KeyRight:
-		ui.tetris.Input(ui.gameCtx, tetris.OpMoveRight)
+		ui.tetris.Input(tetris.OpMoveRight)
 	case tcell.KeyRune:
 		switch event.Rune() {
 		case 'w', 'i':
-			ui.tetris.Input(ui.gameCtx, tetris.OpRotateRight)
+			ui.tetris.Input(tetris.OpRotateRight)
 		case 'a', 'j':
-			ui.tetris.Input(ui.gameCtx, tetris.OpMoveLeft)
+			ui.tetris.Input(tetris.OpMoveLeft)
 		case 's', 'k':
-			ui.tetris.Input(ui.gameCtx, tetris.OpSoftDrop)
+			ui.tetris.Input(tetris.OpSoftDrop)
 		case 'd', 'l':
-			ui.tetris.Input(ui.gameCtx, tetris.OpMoveRight)
+			ui.tetris.Input(tetris.OpMoveRight)
 		case 'z':
-			ui.tetris.Input(ui.gameCtx, tetris.OpRotateLeft)
+			ui.tetris.Input(tetris.OpRotateLeft)
 		case 'c':
-			ui.tetris.Input(ui.gameCtx, tetris.OpHold)
+			ui.tetris.Input(tetris.OpHold)
 		case ' ':
-			ui.tetris.Input(ui.gameCtx, tetris.OpHardDrop)
+			ui.tetris.Input(tetris.OpHardDrop)
 		case 'X':
 			ui.tetris.SetDebug(!ui.tetris.Debug())
 			ui.stateBox.Clear()
 			if ui.tetris.Debug() {
+				ui.logrusLogger.SetLevel(logrus.DebugLevel)
 				_, _ = fmt.Fprint(ui.stateBox, "[red]DEBUG MODE[black]")
+			} else {
+				ui.logrusLogger.SetLevel(logrus.InfoLevel)
 			}
 		case 'I':
 			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockI)
@@ -497,4 +510,35 @@ func paintTetrisBlock(blockType tetris.BlockType) string {
 `
 	}
 	return ""
+}
+
+// logFormatter 日志格式化器
+type logFormatter struct{}
+
+var _ logrus.Formatter = (*logFormatter)(nil)
+
+// Format 格式化日志
+func (f *logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	return []byte(f.level(entry.Level) + entry.Message + "\n"), nil
+}
+
+// level 返回日志级别标识
+func (f *logFormatter) level(l logrus.Level) string {
+	switch l {
+	case logrus.TraceLevel:
+		return "[gray]T[white] "
+	case logrus.DebugLevel:
+		return "[green]D[white] "
+	case logrus.InfoLevel:
+		return "[blue]I[white] "
+	case logrus.WarnLevel:
+		return "[darkorange]W[white] "
+	case logrus.ErrorLevel:
+		return "[red]E[white] "
+	case logrus.FatalLevel:
+		return "[:red]FATAL[:black] "
+	case logrus.PanicLevel:
+		return "[:red]PANIC[:black] "
+	}
+	return "? "
 }

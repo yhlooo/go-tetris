@@ -3,9 +3,11 @@ module github.com/yhlooo/go-tetris
 go 1.23.6
 
 require (
+	github.com/bombsimon/logrusr/v4 v4.1.0
 	github.com/gdamore/tcell/v2 v2.7.1
 	github.com/go-logr/logr v1.4.2
 	github.com/rivo/tview v0.0.0-20250501113434-0c592cd31026
+	github.com/sirupsen/logrus v1.9.3
 )
 
 require (

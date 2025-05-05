@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,6 +35,8 @@ func NewTetris(opts Options) Tetris {
 
 		state:    StatePending,
 		framesCh: make(chan Frame, framesChLen),
+
+		logger: opts.Logger,
 	}
 	t.field = NewField(opts.Rows, opts.Columns, t.newBlock(BlockNone))
 	for i := 0; i < opts.NextBlock+1; i++ {
@@ -75,6 +78,7 @@ type defaultTetris struct {
 	debug    bool
 	state    GameState
 	framesCh chan Frame
+	logger   logr.Logger
 }
 
 var _ Tetris = (*defaultTetris)(nil)
@@ -95,42 +99,45 @@ func (t *defaultTetris) Start(ctx context.Context) error {
 		t.state = StateRunning
 		go t.run(ctx)
 		t.sendFrame()
-		logr.FromContextOrDiscard(ctx).Info("started")
+		t.logger.Info("started")
 	})
 	return err
 }
 
 // Stop 停止游戏
-func (t *defaultTetris) Stop(ctx context.Context) {
+func (t *defaultTetris) Stop() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.cancel != nil {
 		t.cancel()
 	}
 	t.state = StateFinished
-	logr.FromContextOrDiscard(ctx).Info("stoped")
+	t.logger.Info("stoped")
+	return nil
 }
 
 // Pause 暂停游戏
-func (t *defaultTetris) Pause(ctx context.Context) {
+func (t *defaultTetris) Pause() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.state != StateRunning {
-		return
+		return fmt.Errorf("not in running state: %s", t.state)
 	}
 	t.state = StatePaused
-	logr.FromContextOrDiscard(ctx).Info("paused")
+	t.logger.Info("paused")
+	return nil
 }
 
 // Resume 继续游戏
-func (t *defaultTetris) Resume(ctx context.Context) {
+func (t *defaultTetris) Resume() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.state != StatePaused {
-		return
+		return fmt.Errorf("not in paused state: %s", t.state)
 	}
 	t.state = StateRunning
-	logr.FromContextOrDiscard(ctx).Info("resumed")
+	t.logger.Info("resumed")
+	return nil
 }
 
 // SetDebug 设置调试模式
@@ -138,6 +145,7 @@ func (t *defaultTetris) SetDebug(enabled bool) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.debug = enabled
+	t.logger.Info(fmt.Sprintf("set debug mode: %t", enabled))
 }
 
 // Debug 返回是否调试模式
@@ -169,20 +177,19 @@ func (t *defaultTetris) ChangeActiveBlockType(blockType BlockType) error {
 		return fmt.Errorf("insufficient space")
 	}
 
+	t.logger.V(1).Info(fmt.Sprintf("change block type: %s -> %s", oldType, blockType))
 	t.sendFrame()
 
 	return nil
 }
 
 // Input 输入操作指令
-func (t *defaultTetris) Input(ctx context.Context, op Op) {
-	logger := logr.FromContextOrDiscard(ctx)
-
+func (t *defaultTetris) Input(op Op) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
 	if t.state != StateRunning && (!t.debug || t.state != StatePaused) {
-		logger.V(1).Info(fmt.Sprintf("ignore input %q: not running: %s", op, t.state))
+		t.logger.V(1).Info(fmt.Sprintf("ignore input %q: not running: %s", op, t.state))
 		return
 	}
 
@@ -193,47 +200,47 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 		if changed {
 			t.notMove = false
 		}
-		logger.V(1).Info(fmt.Sprintf("move right, ret: %t", changed))
+		t.logger.V(1).Info(fmt.Sprintf("move right, ret: %t", changed))
 	case OpMoveLeft:
 		changed = t.field.MoveActiveBlock(0, -1)
 		if changed {
 			t.notMove = false
 		}
-		logger.V(1).Info(fmt.Sprintf("move left, ret: %t", changed))
+		t.logger.V(1).Info(fmt.Sprintf("move left, ret: %t", changed))
 	case OpRotateRight:
 		changed = t.rotationSystem.RotateRight(t.field)
 		if changed {
 			t.notMove = true
 		}
-		logger.V(1).Info(fmt.Sprintf("rotate right, ret: %t", changed))
+		t.logger.V(1).Info(fmt.Sprintf("rotate right, ret: %t", changed))
 	case OpRotateLeft:
 		changed = t.rotationSystem.RotateLeft(t.field)
 		if changed {
 			t.notMove = true
 		}
-		logger.V(1).Info(fmt.Sprintf("rotate left, ret: %t", changed))
+		t.logger.V(1).Info(fmt.Sprintf("rotate left, ret: %t", changed))
 	case OpSoftDrop:
-		logger.V(1).Info("soft drop")
+		t.logger.V(1).Info("soft drop")
 		if ok := t.field.MoveActiveBlock(-1, 0); !ok {
 			t.pinBlock()
-			logger.V(1).Info("pin block")
+			t.logger.V(1).Info("pin block")
 		} else {
 			t.notMove = false
-			t.score += t.scorer(t.level, ScoreEvent{SoftDrop: 1})
+			t.calcScore(ScoreEvent{SoftDrop: 1})
 		}
 		t.tickets = 0
 		changed = true
 	case OpHardDrop:
-		logger.V(1).Info("hard drop")
+		t.logger.V(1).Info("hard drop")
 		dropLines := 0
 		for t.field.MoveActiveBlock(-1, 0) {
 			t.notMove = false
 			dropLines++
 		}
-		t.score += t.scorer(t.level, ScoreEvent{HardDrop: dropLines})
+		t.calcScore(ScoreEvent{HardDrop: dropLines})
 		t.pinBlock()
 		t.tickets = 0
-		logger.V(1).Info("pin block")
+		t.logger.V(1).Info("pin block")
 		changed = true
 	case OpHold:
 		if !t.holed && t.holdEnabled {
@@ -253,14 +260,14 @@ func (t *defaultTetris) Input(ctx context.Context, op Op) {
 				t.notMove = false
 			}
 			changed = ok
-			logger.V(1).Info(fmt.Sprintf("hold block, ret: %t", ok))
+			t.logger.V(1).Info(fmt.Sprintf("hold block, ret: %t", ok))
 		} else {
-			logger.V(1).Info("can not hold block: block already holed")
+			t.logger.V(1).Info("can not hold block: block already holed")
 		}
 	}
 	if changed {
 		if ok := t.sendFrame(); !ok {
-			logger.Info("WARN: frames channel busy, frame dropped")
+			t.logger.Info("WARN: frames channel busy, frame dropped")
 		}
 	}
 }
@@ -285,8 +292,6 @@ func (t *defaultTetris) CurrentFrame() Frame {
 
 // run 运行
 func (t *defaultTetris) run(ctx context.Context) {
-	logger := logr.FromContextOrDiscard(ctx)
-
 	defer close(t.framesCh)
 	defer t.ticker.Stop()
 
@@ -306,10 +311,10 @@ func (t *defaultTetris) run(ctx context.Context) {
 		speed := t.speed(t.level)
 		if t.tickets > int64(float64(t.freq)/speed) {
 			// 到时间下落一格了
-			logger.V(1).Info("auto drop")
+			t.logger.V(1).Info("auto drop")
 			if ok := t.field.MoveActiveBlock(-1, 0); !ok {
 				t.pinBlock()
-				logger.V(1).Info("pin block")
+				t.logger.V(1).Info("pin block")
 			} else {
 				t.notMove = false
 			}
@@ -323,7 +328,7 @@ func (t *defaultTetris) run(ctx context.Context) {
 // pinBlock 钉住当前活跃方块
 func (t *defaultTetris) pinBlock() {
 	tSpin, clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlocks[0]))
-	t.score += t.scorer(t.level, ScoreEvent{TSpin: tSpin && t.notMove, ClearLines: clearLines})
+	t.calcScore(ScoreEvent{TSpin: tSpin && t.notMove, ClearLines: clearLines})
 	t.clearLines += clearLines
 	t.level = t.clearLines/t.linesPerLevel + 1
 	if !ok {
@@ -346,6 +351,15 @@ func (t *defaultTetris) sendFrame() bool {
 // newBlockType 创建新方块类型
 func (t *defaultTetris) newBlockType() BlockType {
 	return BlockType(t.rand.Int())%7 + 1
+}
+
+// calcScore 计算分数
+func (t *defaultTetris) calcScore(event ScoreEvent) {
+	score, reason := t.scorer(t.level, event)
+	if score > 0 {
+		t.score += score
+		t.logger.Info(fmt.Sprintf("SCORE %s: +%d", strings.Join(reason, ", "), score))
+	}
 }
 
 // newBlock 创建新方块

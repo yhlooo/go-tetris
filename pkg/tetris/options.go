@@ -1,6 +1,12 @@
 package tetris
 
-import "time"
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/go-logr/logr"
+)
 
 // Options 游戏选项
 type Options struct {
@@ -28,6 +34,8 @@ type Options struct {
 	Scorer Scorer
 	// 旋转系统
 	RotationSystem RotationSystem
+
+	Logger logr.Logger
 }
 
 // Complete 补全选项
@@ -68,7 +76,7 @@ func (opts *Options) Complete() {
 type SpeedController func(level int) float64
 
 // Scorer 评分器
-type Scorer func(level int, event ScoreEvent) int
+type Scorer func(level int, event ScoreEvent) (score int, reason []string)
 
 // ScoreEvent 评分事件
 type ScoreEvent struct {
@@ -99,6 +107,8 @@ var DefaultOptions = Options{
 
 	Scorer:         DefaultScorer(),
 	RotationSystem: SuperRotationSystem{},
+
+	Logger: logr.Discard(),
 }
 
 // DefaultSpeedController 默认速度控制器
@@ -140,10 +150,22 @@ func DefaultSpeedController(level int) float64 {
 // DefaultScorer 默认评分器
 func DefaultScorer() Scorer {
 	b2b := false
-	return func(level int, event ScoreEvent) int {
+	return func(level int, event ScoreEvent) (int, []string) {
 		score := 0
-		score += event.SoftDrop
-		score += event.HardDrop * 2
+		var reason []string
+
+		if event.SoftDrop > 0 {
+			score += event.SoftDrop
+			d := ""
+			if event.SoftDrop > 1 {
+				d = " " + strconv.Itoa(event.SoftDrop)
+			}
+			reason = append(reason, "Soft Drop"+d)
+		}
+		if event.HardDrop > 0 {
+			score += event.HardDrop * 2
+			reason = append(reason, fmt.Sprintf("Hard Drop %d", event.HardDrop))
+		}
 
 		// 清行分
 		clearScore := 0
@@ -154,36 +176,44 @@ func DefaultScorer() Scorer {
 				// T-Spin Single
 				clearScore = 800
 				difficult = true
+				reason = append(reason, "T-Spin Single")
 			case 2:
 				// T-Spin Double
 				clearScore = 1200
 				difficult = true
+				reason = append(reason, "T-Spin Double")
 			case 3:
 				// T-Spin Triple
 				clearScore = 1600
 				difficult = true
+				reason = append(reason, "T-Spin Triple")
 			}
 		} else {
 			switch event.ClearLines {
 			case 1:
 				// Single Line
 				clearScore = 100
+				reason = append(reason, "Single Line Clear")
 			case 2:
 				// Double Line
 				clearScore = 300
+				reason = append(reason, "Double Line Clear")
 			case 3:
 				// Triple Line
 				clearScore = 500
+				reason = append(reason, "Triple Line Clear")
 			case 4:
 				// Tetris
 				clearScore = 800
 				difficult = true
+				reason = append(reason, "Tetris")
 			}
 		}
 
 		if b2b && difficult {
 			// Back-to-Back
 			clearScore += clearScore / 2
+			reason = append(reason, "Back-to-Back")
 		}
 		b2b = difficult
 
@@ -192,8 +222,9 @@ func DefaultScorer() Scorer {
 		if event.ClearLines == 0 && event.TSpin {
 			// T-Spin
 			score += 400
+			reason = append(reason, "T-Spin")
 		}
 
-		return score * level
+		return score * level, reason
 	}
 }
