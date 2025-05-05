@@ -215,7 +215,9 @@ func DefaultScorer() Scorer {
 			clearScore += clearScore / 2
 			reason = append(reason, "Back-to-Back")
 		}
-		b2b = difficult
+		if event.ClearLines > 0 {
+			b2b = difficult
+		}
 
 		score += clearScore
 
