@@ -42,7 +42,6 @@ func (ui *GameUI) Run() error {
 // newRoot 创建根元素
 func (ui *GameUI) newRoot() tview.Primitive {
 	ui.pages = tview.NewPages().
-		AddPage("options", ui.newOptionsPage(), true, false).
 		AddPage("help", ui.newHelpPage(), true, false).
 		AddPage("about", ui.newAboutPage(), true, false).
 		AddPage("main", ui.newMainPage(), true, true).
@@ -108,10 +107,9 @@ func (ui *GameUI) newMainPage() tview.Primitive {
 // newMainMenuPage 创建主菜单页
 func (ui *GameUI) newMainMenuPage() tview.Primitive {
 	mainMenu := tview.NewTable().SetSelectable(true, true).
-		SetCell(0, 0, tview.NewTableCell("  Play    ").SetAlign(tview.AlignCenter)).
-		SetCell(1, 0, tview.NewTableCell(" Options  ").SetAlign(tview.AlignCenter)).
-		SetCell(2, 0, tview.NewTableCell("  Help    ").SetAlign(tview.AlignCenter)).
-		SetCell(3, 0, tview.NewTableCell("  About   ").SetAlign(tview.AlignCenter))
+		SetCell(0, 0, tview.NewTableCell("   Play   ").SetAlign(tview.AlignCenter)).
+		SetCell(1, 0, tview.NewTableCell("   Help   ").SetAlign(tview.AlignCenter)).
+		SetCell(2, 0, tview.NewTableCell("  !About  ").SetAlign(tview.AlignCenter))
 	mainMenu.SetBorder(true)
 	mainMenu.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -126,15 +124,13 @@ func (ui *GameUI) newMainMenuPage() tview.Primitive {
 			// 开始游戏
 			ui.startGame()
 		case 1:
-			ui.pages.SwitchToPage("options")
-		case 2:
 			ui.pages.SwitchToPage("help")
-		case 3:
+		case 2:
 			ui.pages.SwitchToPage("about")
 		}
 		return event
 	})
-	mainMenuPage := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(mainMenu, 6, 1, true)
+	mainMenuPage := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(mainMenu, 5, 1, true)
 	mainMenuPage.SetBorderPadding(8, 0, 17, 17)
 
 	return mainMenuPage
@@ -143,10 +139,9 @@ func (ui *GameUI) newMainMenuPage() tview.Primitive {
 // newPauseMenuPage 创建暂停菜单页
 func (ui *GameUI) newPauseMenuPage() tview.Primitive {
 	menu := tview.NewTable().SetSelectable(true, true).
-		SetCell(0, 0, tview.NewTableCell(" Resume   ").SetAlign(tview.AlignCenter)).
-		SetCell(1, 0, tview.NewTableCell(" Options  ").SetAlign(tview.AlignCenter)).
-		SetCell(2, 0, tview.NewTableCell("  Help    ").SetAlign(tview.AlignCenter)).
-		SetCell(3, 0, tview.NewTableCell("  Quit    ").SetAlign(tview.AlignCenter))
+		SetCell(0, 0, tview.NewTableCell("  Resume  ").SetAlign(tview.AlignCenter)).
+		SetCell(1, 0, tview.NewTableCell("   Help   ").SetAlign(tview.AlignCenter)).
+		SetCell(2, 0, tview.NewTableCell("   Quit   ").SetAlign(tview.AlignCenter))
 	menu.SetBorder(true)
 	menu.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -164,16 +159,14 @@ func (ui *GameUI) newPauseMenuPage() tview.Primitive {
 			// 继续游戏
 			ui.resumeGame()
 		case 1:
-			ui.pages.SwitchToPage("options")
-		case 2:
 			ui.pages.SwitchToPage("help")
-		case 3:
+		case 2:
 			// 结束游戏
 			ui.stopGame()
 		}
 		return event
 	})
-	menuPage := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(menu, 6, 1, true)
+	menuPage := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(menu, 5, 1, true)
 	menuPage.SetBorderPadding(8, 0, 17, 17)
 
 	return menuPage
@@ -200,26 +193,6 @@ func (ui *GameUI) newGameOverPage() tview.Primitive {
 	gameOverPage := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(ui.gameOverBox, 6, 1, true)
 	gameOverPage.SetBorderPadding(8, 0, 0, 0)
 	return gameOverPage
-}
-
-// newOptionsPage 创建选项页
-func (ui *GameUI) newOptionsPage() tview.Primitive {
-	optionsBox := tview.NewTextView()
-	optionsBox.SetBorder(true).SetTitle("Options").SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// 回到主页
-		switch event.Key() {
-		case tcell.KeyEnter, tcell.KeyEsc:
-			ui.pages.ShowPage("main")
-			if ui.tetris != nil {
-				ui.pages.ShowPage("pause")
-			} else {
-				ui.pages.ShowPage("menu")
-			}
-		default:
-		}
-		return event
-	})
-	return tview.NewFlex().SetDirection(tview.FlexRow).AddItem(optionsBox, 22, 1, true)
 }
 
 // newHelpPage 创建帮助页
@@ -259,7 +232,7 @@ func (ui *GameUI) newHelpPage() tview.Primitive {
 		// 回到主页
 		switch event.Key() {
 		case tcell.KeyEnter, tcell.KeyEsc:
-			ui.pages.ShowPage("main")
+			ui.pages.SwitchToPage("main")
 			if ui.tetris != nil {
 				ui.pages.ShowPage("pause")
 			} else {
@@ -279,6 +252,15 @@ func (ui *GameUI) newAboutPage() tview.Primitive {
 
 This version is an open source implementation of Tetris, created by yhlooo in 2025,
 see https://github.com/yhlooo/go-tetris .
+
+
+
+
+
+
+
+
+   [lightgray](Press ENTER or ESC to back to menu)[white]
 `)
 	aboutBox.
 		SetBorder(true).
@@ -288,7 +270,7 @@ see https://github.com/yhlooo/go-tetris .
 			// 回到主页
 			switch event.Key() {
 			case tcell.KeyEnter, tcell.KeyEsc:
-				ui.pages.ShowPage("main")
+				ui.pages.SwitchToPage("main")
 				ui.pages.ShowPage("menu")
 			default:
 			}
