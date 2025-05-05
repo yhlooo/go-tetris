@@ -184,6 +184,7 @@ func (ui *GameUI) newGameOverPage() tview.Primitive {
 	ui.gameOverBox = tview.NewTextView()
 	ui.gameOverBox.
 		SetTextAlign(tview.AlignCenter).
+		SetDynamicColors(true).
 		SetBackgroundColor(tcell.ColorBlue).
 		SetBorder(true).
 		SetTitle("Game Over").
@@ -223,7 +224,37 @@ func (ui *GameUI) newOptionsPage() tview.Primitive {
 
 // newHelpPage 创建帮助页
 func (ui *GameUI) newHelpPage() tview.Primitive {
-	helpBox := tview.NewTextView()
+	helpBox := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(`[black:lightgray]                  Control                   [white:black]
+          Up / w / i : Rotate Right
+        Left / a / j : Move Left
+       Right / d / l : Move Right
+        Down / s / k : Soft Drop
+                   z : Rotate Left
+                   c : Hold
+               Space : Hard Drop
+                 ESC : Pause
+[black:lightgray]                   Debug                    [white:black]
+                   X : On/Off Debug Mode
+       O/I/J/L/S/T/Z : Change Block
+
+[black:lightgray]                   Score                    [white:black]
+    Soft Dro                1 * Distance
+    Hard Drop               2 * Distance
+    Single Line Clear                100
+    Double Line Clear                300
+    Triple Line Clear                500
+    Tetris (4 Line Clear)            800
+    T-Spin                           400
+    T-Spin Single                    800
+    T-Spin Double                   1200
+    T-Spin Triple                   1600
+    Back-to-Back            0.5 * Tetris
+                               or T-Spin
+
+   [lightgray](Press ENTER or ESC to back to menu)[white]
+`)
 	helpBox.SetBorder(true).SetTitle("Help").SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// 回到主页
 		switch event.Key() {
@@ -238,22 +269,31 @@ func (ui *GameUI) newHelpPage() tview.Primitive {
 		}
 		return event
 	})
-	return tview.NewFlex().SetDirection(tview.FlexRow).AddItem(helpBox, 22, 1, true)
+	return tview.NewFlex().SetDirection(tview.FlexRow).AddItem(helpBox, 30, 1, true)
 }
 
 // newAboutPage 创建关于页
 func (ui *GameUI) newAboutPage() tview.Primitive {
-	aboutBox := tview.NewTextView()
-	aboutBox.SetBorder(true).SetTitle("About").SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// 回到主页
-		switch event.Key() {
-		case tcell.KeyEnter, tcell.KeyEsc:
-			ui.pages.ShowPage("main")
-			ui.pages.ShowPage("menu")
-		default:
-		}
-		return event
-	})
+	aboutBox := tview.NewTextView().SetDynamicColors(true).
+		SetText(`Tetris is the addictive puzzle game created by Alexey Pajitnov in 1984. In the decades to follow, Tetris became one of the most successful and recognizable video games, appearing on nearly every gaming platform available.
+
+This version is an open source implementation of Tetris, created by yhlooo in 2025,
+see https://github.com/yhlooo/go-tetris .
+`)
+	aboutBox.
+		SetBorder(true).
+		SetBorderPadding(0, 0, 1, 1).
+		SetTitle("About").
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			// 回到主页
+			switch event.Key() {
+			case tcell.KeyEnter, tcell.KeyEsc:
+				ui.pages.ShowPage("main")
+				ui.pages.ShowPage("menu")
+			default:
+			}
+			return event
+		})
 	return tview.NewFlex().SetDirection(tview.FlexRow).AddItem(aboutBox, 22, 1, true)
 }
 
@@ -415,7 +455,10 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 
 	// 游戏结束
 	if frame.GameOver {
-		ui.gameOverBox.SetText(fmt.Sprintf("\nScore: %d\n\n(Press ENTER or ESC to continue)", frame.Score))
+		ui.gameOverBox.SetText(fmt.Sprintf(
+			"\nScore: %d\n\n[lightgray](Press ENTER or ESC to continue)[white]",
+			frame.Score,
+		))
 		ui.pages.ShowPage("over")
 	}
 }
