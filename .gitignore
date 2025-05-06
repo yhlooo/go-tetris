@@ -32,3 +32,4 @@ go.work
 /bin/
 /dist/
 /outputs/
+/web/

@@ -8,6 +8,8 @@ type FieldReader interface {
 	Block(row, col int) (BlockType, bool)
 	// BlockWithActiveBlock 获取指定位置的方块类型，包含活跃方块
 	BlockWithActiveBlock(row, col int) BlockType
+	// BlocksWithActiveBlock 获取所有位置方块，包含活跃方块
+	BlocksWithActiveBlock() [][]BlockType
 	// ActiveBlock 获取当前活跃方块
 	ActiveBlock() *Block
 }
@@ -50,6 +52,30 @@ var _ FieldReader = &Field{}
 // Size 获取场大小
 func (f *Field) Size() (rows, cols int) {
 	return f.rows, f.cols
+}
+
+// BlocksWithActiveBlock 获取所有位置方块，包含活跃方块
+func (f *Field) BlocksWithActiveBlock() [][]BlockType {
+	// 拷贝已填充块
+	ret := make([][]BlockType, len(f.filled))
+	for i := range ret {
+		ret[i] = make([]BlockType, len(f.filled[i]))
+		copy(ret[i], f.filled[i])
+	}
+	if f.active == nil {
+		return ret
+	}
+
+	// 添加活跃方块
+	for _, cell := range f.active.Cells() {
+		row := cell.Row()
+		col := cell.Column()
+		if row >= 0 && row < len(ret) && col >= 0 && col < len(ret[row]) {
+			ret[row][col] = f.active.Type
+		}
+	}
+
+	return ret
 }
 
 // BlockWithActiveBlock 获取指定位置的方块类型，包含活跃方块
