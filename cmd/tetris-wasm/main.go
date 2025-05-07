@@ -32,7 +32,8 @@ func main() {
 	if static {
 		log.Println("generate static files to ./web")
 		if err := app.GenerateStaticWebsite("web", &app.Handler{
-			Name: "Tetris",
+			Name:      "Tetris",
+			Resources: app.GitHubPages("go-tetris"),
 		}); err != nil {
 			log.Fatal(err)
 		}
