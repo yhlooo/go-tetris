@@ -1,0 +1,78 @@
+# goreleaser 配置
+# 参考 https://goreleaser.com
+
+version: 2
+
+builds:
+  - id: tetris-bin
+    binary: tetris
+    main: "./cmd/tetrisf"
+    env:
+      - "CGO_ENABLED=0"
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - "-w"
+
+archives:
+  - format: "tar.gz"
+    name_template: "{{ .Binary }}-v{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+dockers:
+  - id: tetris-image-linux-amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - tetris-bin
+    image_templates:
+      - "ghcr.io/yhlooo/tetris:latest-amd64"
+      - "ghcr.io/yhlooo/tetris:v{{ .Version }}-amd64"
+    dockerfile: goreleaser.dockerfile
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.source=https://github.com/yhlooo/go-tetris.git"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--platform=linux/amd64"
+  - id: tetris-image-linux-arm64
+    goos: linux
+    goarch: arm64
+    ids:
+      - tetris-bin
+    image_templates:
+      - "ghcr.io/yhlooo/tetris:latest-arm64"
+      - "ghcr.io/yhlooo/tetris:v{{ .Version }}-arm64"
+    dockerfile: goreleaser.dockerfile
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.source=https://github.com/yhlooo/go-tetris.git"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--platform=linux/arm64"
+docker_manifests:
+  - id: tetris-image
+    name_template: "ghcr.io/yhlooo/tetris:v{{ .Version }}"
+    image_templates:
+      - "ghcr.io/yhlooo/tetris:v{{ .Version }}-amd64"
+      - "ghcr.io/yhlooo/tetris:v{{ .Version }}-arm64"
+  - id: tetris-image-latest
+    name_template: "ghcr.io/yhlooo/tetris:latest"
+    image_templates:
+      - "ghcr.io/yhlooo/tetris:latest-amd64"
+      - "ghcr.io/yhlooo/tetris:latest-arm64"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^style:"
+      - "^chore:"
