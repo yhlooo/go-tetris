@@ -9,5 +9,5 @@
 Project objectives:
 
 - Implement a Tetris library in Go (mostly implemented)
-- Terminal-based Tetris implementation (mostly completed, see [Releases](https://github.com/yhlooo/scaf/releases) or use Docker image [`ghcr.io/yhlooo/tetris:latest`](https://github.com/yhlooo/tetris/pkgs/container/tetris))
+- Terminal-based Tetris implementation (mostly completed, see [Releases](https://github.com/yhlooo/go-tetris/releases) or use Docker image [`ghcr.io/yhlooo/tetris:latest`](https://github.com/yhlooo/tetris/pkgs/container/tetris))
 - WASM-based browser-playable Tetris (still in its very early stages, visit [go-tetris](https://yhlooo.github.io/go-tetris/))
