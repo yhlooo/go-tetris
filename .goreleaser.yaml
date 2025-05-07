@@ -6,7 +6,7 @@ version: 2
 builds:
   - id: tetris-bin
     binary: tetris
-    main: "./cmd/tetrisf"
+    main: "./cmd/tetris"
     env:
       - "CGO_ENABLED=0"
     goos:
