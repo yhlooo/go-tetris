@@ -15,8 +15,7 @@ jobs:
       pages: write
       id-token: write
     environment:
-      name: github-pages
-      url: ${{ steps.pages.outputs.page_url }}
+      name: release
     steps:
       - name: "Checkout"
         uses: "actions/checkout@v4"
@@ -42,12 +41,11 @@ jobs:
         uses: "actions/configure-pages@v5"
       - name: "Build Pages"
         run: |
-          go run ./cmd/tetris-wasm --static
-          GOOS=js GOARCH=wasm go build -o web/web/app.wasm ./cmd/tetris-wasm
+          go run ./cmd/tetris-wasm --gen-static --static-prefix /go-tetris
+          GOOS=js GOARCH=wasm go build -o web/static/web/app.wasm ./cmd/tetris-wasm
       - name: "Upload pages artifact"
         uses: "actions/upload-pages-artifact@v3"
         with:
-          path: 'web'
+          path: 'web/static'
       - name: "Deploy to GitHub Pages"
         uses: "actions/deploy-pages@v4"
-        id: "pages"
