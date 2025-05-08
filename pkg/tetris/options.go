@@ -103,7 +103,7 @@ var DefaultOptions = Options{
 	InitialLevel:    1,
 	LinesPerLevel:   10,
 	SpeedController: DefaultSpeedController,
-	Frequency:       1000,
+	Frequency:       60,
 
 	Scorer:         DefaultScorer(),
 	RotationSystem: SuperRotationSystem{},

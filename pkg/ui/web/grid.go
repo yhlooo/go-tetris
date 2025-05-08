@@ -79,6 +79,11 @@ func (grid *TetrisGrid) UpdateBlocks(data [][]tetris.BlockType) {
 	grid.paintBlocks()
 }
 
+// Size 获取当前大小
+func (grid *TetrisGrid) Size() (width, height int) {
+	return grid.width, grid.height
+}
+
 // resize 调整大小
 func (grid *TetrisGrid) resize(rows, cols int) {
 	grid.rows = rows
