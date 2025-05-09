@@ -56,6 +56,7 @@ jobs:
         run: |
           go run ./cmd/tetris-wasm --gen-static --static-prefix /go-tetris
           GOOS=js GOARCH=wasm go build -o dist/web/web/app.wasm ./cmd/tetris-wasm
+          cp web/*.css dist/web/web/
       - name: "Upload pages artifact"
         uses: "actions/upload-pages-artifact@v3"
         with:
