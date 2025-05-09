@@ -221,10 +221,7 @@ func (t *defaultTetris) Input(op Op) {
 		t.logger.V(1).Info(fmt.Sprintf("rotate left, ret: %t", changed))
 	case OpSoftDrop:
 		t.logger.V(1).Info("soft drop")
-		if ok := t.field.MoveActiveBlock(-1, 0); !ok {
-			t.pinBlock()
-			t.logger.V(1).Info("pin block")
-		} else {
+		if ok := t.field.MoveActiveBlock(-1, 0); ok {
 			t.notMove = false
 			t.calcScore(ScoreEvent{SoftDrop: 1})
 		}
