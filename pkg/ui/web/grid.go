@@ -9,7 +9,7 @@ import (
 )
 
 // NewTetrisGrid 创建 TetrisGrid
-func NewTetrisGrid(rows, cols int) *TetrisGrid {
+func NewTetrisGrid(rows, cols int, colors BlockColors) *TetrisGrid {
 	data := make([][]tetris.BlockType, rows)
 	for i := range data {
 		data[i] = make([]tetris.BlockType, cols)
@@ -17,19 +17,9 @@ func NewTetrisGrid(rows, cols int) *TetrisGrid {
 	grid := &TetrisGrid{
 		cellWidth:   20,
 		borderWidth: 2,
-		borderColor: "#1B1B1B",
-		blockColors: map[tetris.BlockType]string{
-			tetris.BlockNone: "#000000",
-			tetris.BlockI:    "#67C4EC",
-			tetris.BlockJ:    "#5F64A9",
-			tetris.BlockL:    "#DF8136",
-			tetris.BlockO:    "#F0D543",
-			tetris.BlockS:    "#62B451",
-			tetris.BlockT:    "#A25399",
-			tetris.BlockZ:    "#DB3E32",
-		},
-		data:   data,
-		canvas: app.Canvas(),
+		colors:      colors,
+		data:        data,
+		canvas:      app.Canvas(),
 	}
 	grid.resize(rows, cols)
 	return grid
@@ -42,8 +32,7 @@ type TetrisGrid struct {
 
 	cellWidth   int
 	borderWidth int
-	borderColor string
-	blockColors map[tetris.BlockType]string
+	colors      BlockColors
 
 	data [][]tetris.BlockType
 
@@ -106,10 +95,7 @@ func (grid *TetrisGrid) paintBlocks() {
 	currentColor := ""
 	for i, row := range grid.data {
 		for j, block := range row {
-			color, ok := grid.blockColors[block]
-			if !ok {
-				color = "#000000"
-			}
+			color := grid.colors.Block(block)
 			if color != currentColor {
 				canvasCTX.Set("fillStyle", color)
 				currentColor = color
@@ -128,7 +114,7 @@ func (grid *TetrisGrid) paintBorder() {
 		return
 	}
 	canvasCTX := grid.canvas.JSValue().Call("getContext", "2d")
-	canvasCTX.Set("strokeStyle", grid.borderColor)
+	canvasCTX.Set("strokeStyle", grid.colors.Border)
 	canvasCTX.Set("lineWidth", grid.borderWidth)
 	for i := 0; i < grid.rows-1; i++ {
 		y := (grid.cellWidth+grid.borderWidth)*(i+1) - grid.borderWidth/2
@@ -188,4 +174,53 @@ func newBlockGridData(blockType tetris.BlockType) [][]tetris.BlockType {
 			{tetris.BlockNone, tetris.BlockNone, tetris.BlockNone},
 		}
 	}
+}
+
+// BlockColors 方块颜色
+type BlockColors struct {
+	Border     string
+	Background string
+	BlockI     string
+	BlockJ     string
+	BlockL     string
+	BlockO     string
+	BlockS     string
+	BlockT     string
+	BlockZ     string
+}
+
+// Block 获取指定方块颜色
+func (colors BlockColors) Block(blockType tetris.BlockType) string {
+	switch blockType {
+	case tetris.BlockNone:
+		return colors.Background
+	case tetris.BlockI:
+		return colors.BlockI
+	case tetris.BlockJ:
+		return colors.BlockJ
+	case tetris.BlockL:
+		return colors.BlockL
+	case tetris.BlockO:
+		return colors.BlockO
+	case tetris.BlockS:
+		return colors.BlockS
+	case tetris.BlockT:
+		return colors.BlockT
+	case tetris.BlockZ:
+		return colors.BlockZ
+	}
+	return colors.Background
+}
+
+// DefaultBlockColors 默认颜色
+var DefaultBlockColors = BlockColors{
+	Border:     "#1b1b1b",
+	Background: "#000000",
+	BlockI:     "#67c4ec",
+	BlockJ:     "#5f64a9",
+	BlockL:     "#df8136",
+	BlockO:     "#f0d543",
+	BlockS:     "#62b451",
+	BlockT:     "#a25399",
+	BlockZ:     "#db3e32",
 }

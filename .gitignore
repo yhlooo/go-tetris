@@ -32,4 +32,4 @@ go.work
 /bin/
 /dist/
 /outputs/
-/web/
+/web/app.wasm

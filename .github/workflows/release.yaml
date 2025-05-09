@@ -55,11 +55,11 @@ jobs:
       - name: "Build Pages"
         run: |
           go run ./cmd/tetris-wasm --gen-static --static-prefix /go-tetris
-          GOOS=js GOARCH=wasm go build -o web/static/web/app.wasm ./cmd/tetris-wasm
+          GOOS=js GOARCH=wasm go build -o dist/web/web/app.wasm ./cmd/tetris-wasm
       - name: "Upload pages artifact"
         uses: "actions/upload-pages-artifact@v3"
         with:
-          path: 'web/static'
+          path: 'dist/web'
       - name: "Deploy to GitHub Pages"
         id: "deployment"
         uses: "actions/deploy-pages@v4"

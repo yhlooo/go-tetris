@@ -12,7 +12,7 @@ import (
 
 var (
 	genStatic    = false
-	staticPath   = "web/static"
+	staticPath   = "dist/web"
 	staticPrefix = ""
 	listenAddr   = ":8000"
 )
@@ -32,12 +32,16 @@ func main() {
 	})
 	app.RunWhenOnBrowser()
 
+	h := &app.Handler{
+		Name: "Tetris",
+		Styles: []string{
+			"/web/tetris.css",
+		},
+	}
+
 	if genStatic {
 		// 生成静态文件
 		log.Printf("generate static files to %s", staticPath)
-		h := &app.Handler{
-			Name: "Tetris",
-		}
 		if staticPrefix != "" {
 			h.Resources = app.PrefixedLocation(staticPrefix)
 		}
@@ -47,9 +51,7 @@ func main() {
 	} else {
 		// 运行 Server
 		log.Printf("serving http on %s", listenAddr)
-		http.Handle("/", &app.Handler{
-			Name: "Tetris",
-		})
+		http.Handle("/", h)
 		if err := http.ListenAndServe(listenAddr, nil); err != nil {
 			log.Fatal(err)
 		}
