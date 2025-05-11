@@ -125,7 +125,7 @@ div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-block-booth > 
     padding: 5px;
 }
 div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-block-booth > div.tetris-block canvas {
-    width: 100%;
+    height: 20px;
 }
 
 /* 侧栏中的计分栏 */
