@@ -79,6 +79,7 @@ func (ui *GameUI) toStartMenu(_ app.Context) {
 		if err := ui.tetris.Stop(); err != nil {
 			app.Logf("stop tetris error: %v", err)
 		}
+		ui.touchController.SetTetris(nil)
 		ui.tetris = nil
 	}
 }
@@ -87,6 +88,7 @@ func (ui *GameUI) toStartMenu(_ app.Context) {
 func (ui *GameUI) toGame(ctx app.Context) {
 	if ui.tetris == nil {
 		ui.tetris = tetris.NewTetris(tetris.DefaultOptions)
+		ui.touchController.SetTetris(ui.tetris)
 		go ui.paintFrameLoop(ctx, ui.tetris.Frames())
 		if err := ui.tetris.Start(ctx); err != nil {
 			app.Logf("start tetris error: %v", err)

@@ -8,14 +8,17 @@ import (
 
 // NewGameUI 创建 GameUI
 func NewGameUI() *GameUI {
-	return &GameUI{}
+	return &GameUI{
+		touchController: &TouchController{},
+	}
 }
 
 // GameUI 基于浏览器运行的 WebAssembly 的游戏用户交互界面
 type GameUI struct {
 	app.Compo
 
-	handleKeyDown app.Func
+	handleKeyDown   app.Func
+	touchController *TouchController
 
 	field      *TetrisGrid
 	hold       *TetrisGrid
@@ -36,7 +39,10 @@ func (ui *GameUI) Render() app.UI {
 	return app.Div().Body(ui.renderMain()).Styles(map[string]string{
 		"display":         "flex",
 		"justify-content": "center",
-	})
+	}).
+		On("touchstart", ui.touchController.HandleTouchStart).
+		On("touchmove", ui.touchController.HandleTouchMove).
+		On("touchend", ui.touchController.HandleTouchEnd)
 }
 
 // OnMount 挂载元素时
