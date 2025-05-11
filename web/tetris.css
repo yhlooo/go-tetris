@@ -9,16 +9,17 @@ div.tetris-container {
     justify-content: center;
     align-items: center;
 }
-div.tetris-container.tetris-xs {
-    height: 100vh;
-    background-color: #0f0f0f;
-}
 /* 主要内容 */
 div.tetris-main {
-    max-width: 960px;
+    display: flex;
+    width: 960px;
+    justify-content: center;
+    align-items: center;
+    background-color: #0f0f0f;
 }
 div.tetris-container.tetris-xs div.tetris-main {
-    width: 100%;
+    width: 100vw;
+    height: 100vh;
 }
 
 /* 游戏 */
@@ -26,11 +27,12 @@ div.tetris-game {
     display: flex;
     justify-content: center;
     padding: 20px;
-    background-color: #0f0f0f;
+    /*background-color: #0f0f0f;*/
     color: #e1e1e1;
     font-family: sans-serif;
 }
 div.tetris-container.tetris-xs div.tetris-game {
+    width: 100%;
     padding: 20px 0;
     font-size: 10px;
 }
@@ -55,9 +57,9 @@ div.tetris-game div.tetris-game-menu {
 
 /* 游戏中的菜单按钮 */
 div.tetris-game div.tetris-game-menu button {
-    width: 100px;
-    padding: 8px 0;
-    margin: 5px;
+    width: 120px;
+    padding: 4px 0;
+    margin: 2px;
     border: 2px solid #2b2b2b;
     background-color: #1b1b1b;
     color: #e1e1e1;
@@ -144,28 +146,63 @@ div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-score-box > di
     margin: 10px 0;
 }
 
-/* 小屏幕时使用悬浮框 */
-div.tetris-container.tetris-xs div.tetris-page {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 20%;
-    left: 0;
-    margin: 0 10px;
-    padding: 10px;
-    border: 4px solid #2b2b2b;
+/* 侧栏中的按钮框 */
+div.tetris-game > div.tetris-game-sidebar > div.tetris-btn-box {
+    border: 0;
+    margin-top: 20px;
+    background-color: transparent;
+}
+div.tetris-game-sidebar > div.tetris-btn-box button {
+    width: 100%;
+    margin: 2px;
+    padding: 4px 0;
+    border: 2px solid #2b2b2b;
     background-color: #1b1b1b;
     color: #e1e1e1;
+    cursor: pointer;
+    /*font-size: 16px;*/
 }
-/* 悬浮框中的按钮 */
-div.tetris-page button {
+div.tetris-game-sidebar > div.tetris-btn-box button:hover {
+    background-color: #2b2b2b;
+}
+div.tetris-game-sidebar > div.tetris-btn-box button:active {
+    background-color: #1b1b1b;
+}
+
+/* 悬浮框提示框 */
+div.tetris-main div.tetris-tip-box {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+div.tetris-main div.tetris-tip-box > div {
+    display: flex;
+    width: 300px;
+    flex-direction: column;
+    padding: 10px;
+    border: 4px solid #2b2b2b;
+    background-color: #202020;
+    color: #e1e1e1;
+}
+
+/* 悬浮框提示框中的按钮 */
+div.tetris-tip-box button {
     width: 100px;
     padding: 8px 0;
-    margin: 5px;
+    margin: 15px 5px 5px;
     border: 2px solid #2b2b2b;
     background-color: #1b1b1b;
     color: #e1e1e1;
     cursor: pointer;
     font-size: 16px;
     align-self: flex-end;
+}
+div.tetris-tip-box button:hover {
+    background-color: #2b2b2b;
+}
+div.tetris-tip-box button:active {
+    background-color: #1b1b1b;
 }

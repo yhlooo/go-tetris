@@ -27,7 +27,9 @@ type GameUI struct {
 	level      int
 	clearLines int
 
-	page string
+	page      string
+	showHelp  bool
+	showAbout bool
 
 	tetris tetris.Tetris
 }
@@ -42,7 +44,9 @@ func (ui *GameUI) Render() app.UI {
 	if width < 560 {
 		classes = append(classes, "tetris-xs")
 	}
-	return app.Div().Class(classes...).Body(ui.renderMain()).
+	return app.Div().Class(classes...).Body(
+		ui.renderMain(),
+	).
 		On("touchstart", ui.touchController.HandleTouchStart).
 		On("touchmove", ui.touchController.HandleTouchMove).
 		On("touchend", ui.touchController.HandleTouchEnd)

@@ -11,8 +11,12 @@ import (
 func (ui *GameUI) renderMain() app.UI {
 	return app.Div().Class("tetris-main").Body(
 		ui.renderGame(),
-		ui.renderHelp(),
-		ui.renderAbout(),
+		app.If(ui.showHelp, func() app.UI {
+			return ui.renderHelp()
+		}),
+		app.If(ui.showAbout, func() app.UI {
+			return ui.renderAbout()
+		}),
 	)
 }
 
@@ -48,10 +52,14 @@ func (ui *GameUI) renderGame() app.UI {
 			app.If(ui.page == "", func() app.UI {
 				return app.Div().Class("tetris-game-menu").Body(
 					app.Button().Text("Start").OnClick(func(ctx app.Context, _ app.Event) { ui.toGame(ctx) }),
+					app.Button().Text("Help").OnClick(func(ctx app.Context, _ app.Event) { ui.showHelp = true }),
+					app.Button().Text("About").OnClick(func(ctx app.Context, _ app.Event) { ui.showAbout = true }),
 				)
 			}).ElseIf(ui.page == "paused", func() app.UI {
 				return app.Div().Class("tetris-game-menu").Body(
 					app.Button().Text("Resume").OnClick(func(ctx app.Context, _ app.Event) { ui.toGame(ctx) }),
+					app.Button().Text("Help").OnClick(func(ctx app.Context, _ app.Event) { ui.showHelp = true }),
+					app.Button().Text("About").OnClick(func(ctx app.Context, _ app.Event) { ui.showAbout = true }),
 					app.Button().Text("Quit").OnClick(func(ctx app.Context, _ app.Event) { ui.toStartMenu(ctx) }),
 				)
 			}).ElseIf(ui.page == "over", func() app.UI {
@@ -74,40 +82,53 @@ func (ui *GameUI) renderGame() app.UI {
 					return app.Div().Class("tetris-block").Body(ui.next[i])
 				}),
 			),
+			app.Div().
+				Class("tetris-btn-box").
+				Body(app.Button().Text("Pause")).
+				OnClick(func(ctx app.Context, _ app.Event) {
+					if ui.tetris == nil {
+						return
+					}
+					ui.toPaused(ctx)
+				}),
 		),
 	)
 }
 
 // renderHelp 渲染帮助信息
 func (ui *GameUI) renderHelp() app.UI {
-	return app.Div().Class("tetris-help tetris-page").Body(
-		app.H2().Text("Help"),
-		app.P().Body(
-			app.Text("Up / w / i : Rotate Right"), app.Br(),
-			app.Text("Left / a / j : Move Left"), app.Br(),
-			app.Text("Right / d / l : Move Right"), app.Br(),
-			app.Text("Down / s / k : Soft Drop"), app.Br(),
-			app.Text("z : Rotate Left"), app.Br(),
-			app.Text("c : Hold"), app.Br(),
-			app.Text("Space : Hard Drop"), app.Br(),
-			app.Text("ESC : Pause"),
+	return app.Div().Class("tetris-help tetris-tip-box").Body(
+		app.Div().Body(
+			app.H2().Text("Help"),
+			app.P().Body(
+				app.Text("Up / w / i : Rotate Right"), app.Br(),
+				app.Text("Left / a / j : Move Left"), app.Br(),
+				app.Text("Right / d / l : Move Right"), app.Br(),
+				app.Text("Down / s / k : Soft Drop"), app.Br(),
+				app.Text("z : Rotate Left"), app.Br(),
+				app.Text("c : Hold"), app.Br(),
+				app.Text("Space : Hard Drop"), app.Br(),
+				app.Text("ESC : Pause"),
+			),
+			app.Button().Text("Ok").OnClick(func(ctx app.Context, _ app.Event) { ui.showHelp = false }),
 		),
-		app.Button().Text("Ok"),
 	)
 }
 
 // renderAbout 渲染关于信息
 func (ui *GameUI) renderAbout() app.UI {
-	return app.Div().Class("tetris-about tetris-page").Body(
-		app.H2().Text("About"),
-		app.P().Text(`Tetris is the addictive puzzle game created by Alexey Pajitnov in 1984.
+	return app.Div().Class("tetris-about tetris-tip-box").Body(
+		app.Div().Body(
+			app.H2().Text("About"),
+			app.P().Text(`Tetris is the addictive puzzle game created by Alexey Pajitnov in 1984.
 In the decades to follow, Tetris became one of the most successful and recognizable video games,
 appearing on nearly every gaming platform available.`),
-		app.P().Body(
-			app.Text("This version is an open source implementation of Tetris, created by yhlooo in 2025, see "),
-			app.A().Text("https://github.com/yhlooo/go-tetris").Href("https://github.com/yhlooo/go-tetris"),
-			app.Text(" ."),
+			app.P().Body(
+				app.Text("This version is an open source implementation of Tetris, created by yhlooo in 2025, see "),
+				app.A().Text("https://github.com/yhlooo/go-tetris").Href("https://github.com/yhlooo/go-tetris"),
+				app.Text(" ."),
+			),
+			app.Button().Text("Ok").OnClick(func(ctx app.Context, _ app.Event) { ui.showAbout = false }),
 		),
-		app.Button().Text("Ok"),
 	)
 }
