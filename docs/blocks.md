@@ -1,3 +1,3 @@
 # Blocks
 
-![blocks](blocks.png)
+![blocks](img/blocks.png)
