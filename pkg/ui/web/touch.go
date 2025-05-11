@@ -50,7 +50,6 @@ func (c *TouchController) HandleTouchStart(_ app.Context, e app.Event) {
 	c.lastX = touch.Get("screenX").Int()
 	c.lastY = touch.Get("screenY").Int()
 	c.opCnt = 0
-	e.PreventDefault()
 }
 
 // HandleTouchMove 处理触摸移动事件
@@ -145,8 +144,6 @@ func (c *TouchController) HandleTouchEnd(_ app.Context, e app.Event) {
 		app.Logf("touch: %s", tetris.OpRotateRight)
 		c.tetris.Input(tetris.OpRotateRight)
 	}
-
-	e.PreventDefault()
 }
 
 // getTouch 获取触控信息
