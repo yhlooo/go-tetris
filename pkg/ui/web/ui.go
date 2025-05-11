@@ -36,10 +36,13 @@ var _ app.Composer = (*GameUI)(nil)
 
 // Render 渲染画面
 func (ui *GameUI) Render() app.UI {
-	return app.Div().Body(ui.renderMain()).Styles(map[string]string{
-		"display":         "flex",
-		"justify-content": "center",
-	}).
+	width := app.Window().Get("innerWidth").Int()
+	app.Logf("width: %d", width)
+	classes := []string{"tetris-container"}
+	if width < 560 {
+		classes = append(classes, "tetris-xs")
+	}
+	return app.Div().Class(classes...).Body(ui.renderMain()).
 		On("touchstart", ui.touchController.HandleTouchStart).
 		On("touchmove", ui.touchController.HandleTouchMove).
 		On("touchend", ui.touchController.HandleTouchEnd)
