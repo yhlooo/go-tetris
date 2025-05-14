@@ -111,20 +111,20 @@ div.tetris-game > div.tetris-game-field {
 }
 
 /* 侧栏中的方块展示位 */
-div.tetris-game-sidebar div.tetris-block-booth {
+div.tetris-game-sidebar div.tetris-tetrimino-booth {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 /* 侧栏中的方块展示位中的方块 */
-div.tetris-game-sidebar div.tetris-block-booth > div.tetris-block {
+div.tetris-game-sidebar div.tetris-tetrimino-booth > div.tetris-tetrimino {
     padding: 10px 0;
 }
-div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-block-booth > div.tetris-block {
+div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-tetrimino-booth > div.tetris-tetrimino {
     padding: 5px;
 }
-div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-block-booth > div.tetris-block canvas {
+div.tetris-container.tetris-xs div.tetris-game-sidebar div.tetris-tetrimino-booth > div.tetris-tetrimino canvas {
     height: 20px;
 }
 

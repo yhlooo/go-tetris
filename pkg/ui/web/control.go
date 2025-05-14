@@ -4,6 +4,7 @@ import (
 	"github.com/maxence-charriere/go-app/v10/pkg/app"
 
 	"github.com/yhlooo/go-tetris/pkg/tetris"
+	"github.com/yhlooo/go-tetris/pkg/tetris/common"
 )
 
 // handleInput 处理用户输入事件
@@ -51,14 +52,14 @@ func (ui *GameUI) paintFrameLoop(ctx app.Context, ch <-chan tetris.Frame) {
 
 // paintFrame 绘制帧
 func (ui *GameUI) paintFrame(ctx app.Context, frame tetris.Frame) {
-	ui.field.UpdateBlocks(frame.Field.BlocksWithActiveBlock())
-	ui.next[0].UpdateBlocks(newBlockGridData(frame.NextBlocks[0]))
-	ui.next[1].UpdateBlocks(newBlockGridData(frame.NextBlocks[1]))
-	ui.next[2].UpdateBlocks(newBlockGridData(frame.NextBlocks[2]))
-	if frame.HoldingBlock != nil {
-		ui.hold.UpdateBlocks(newBlockGridData(*frame.HoldingBlock))
+	ui.field.UpdateTetriminos(frame.Field.Tetriminos())
+	ui.next[0].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[0]))
+	ui.next[1].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[1]))
+	ui.next[2].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[2]))
+	if frame.HoldingTetrimino != nil {
+		ui.hold.UpdateTetriminos(newTetriminoGridData(*frame.HoldingTetrimino))
 	} else {
-		ui.hold.UpdateBlocks(newBlockGridData(tetris.BlockNone))
+		ui.hold.UpdateTetriminos(newTetriminoGridData(common.TetriminoNone))
 	}
 
 	ui.score = frame.Score

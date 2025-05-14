@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+
+	"github.com/yhlooo/go-tetris/pkg/tetris/rotationsystems"
 )
 
 // Options 游戏选项
@@ -16,7 +18,7 @@ type Options struct {
 	// 是否开启暂存方块功能
 	HoldEnabled bool
 	// 提示的下个方块数量
-	NextBlock int
+	ShowNextTetriminos int
 
 	// 随机数种子
 	RandSeed int64
@@ -33,7 +35,7 @@ type Options struct {
 	// 评分器
 	Scorer Scorer
 	// 旋转系统
-	RotationSystem RotationSystem
+	RotationSystem rotationsystems.RotationSystem
 
 	Logger logr.Logger
 }
@@ -68,7 +70,7 @@ func (opts *Options) Complete() {
 		opts.Scorer = DefaultScorer()
 	}
 	if opts.RotationSystem == nil {
-		opts.RotationSystem = SuperRotationSystem{}
+		opts.RotationSystem = rotationsystems.SuperRotationSystem{}
 	}
 }
 
@@ -95,8 +97,8 @@ var DefaultOptions = Options{
 	Rows:    20,
 	Columns: 10,
 
-	HoldEnabled: true,
-	NextBlock:   3,
+	HoldEnabled:        true,
+	ShowNextTetriminos: 3,
 
 	RandSeed: 0,
 
@@ -106,7 +108,7 @@ var DefaultOptions = Options{
 	Frequency:       60,
 
 	Scorer:         DefaultScorer(),
-	RotationSystem: SuperRotationSystem{},
+	RotationSystem: rotationsystems.SuperRotationSystem{},
 
 	Logger: logr.Discard(),
 }

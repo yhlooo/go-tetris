@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/yhlooo/go-tetris/pkg/tetris"
+	"github.com/yhlooo/go-tetris/pkg/tetris/common"
 )
 
 // NewGameUI 创建 GameUI
@@ -219,7 +220,7 @@ func (ui *GameUI) newHelpPage() tview.Primitive {
                  ESC : Pause
 [black:lightgray]                   Debug                    [white:black]
                    X : On/Off Debug Mode
-       O/I/J/L/S/T/Z : Change Block
+       O/I/J/L/S/T/Z : Change Tetrimino
 
 [black:lightgray]                   Score                    [white:black]
     Soft Dro                1 * Distance
@@ -377,19 +378,19 @@ func (ui *GameUI) handleGameInput(event *tcell.EventKey) *tcell.EventKey {
 				ui.logrusLogger.SetLevel(logrus.InfoLevel)
 			}
 		case 'I':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockI)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.I)
 		case 'J':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockJ)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.J)
 		case 'L':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockL)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.L)
 		case 'O':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockO)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.O)
 		case 'S':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockS)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.S)
 		case 'T':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockT)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.T)
 		case 'Z':
-			_ = ui.tetris.ChangeActiveBlockType(tetris.BlockZ)
+			_ = ui.tetris.ChangeActiveTetriminoType(common.Z)
 		}
 	default:
 	}
@@ -410,22 +411,22 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 	fieldContent := ""
 	for i := 19; i >= 0; i-- {
 		for j := 0; j < 10; j++ {
-			switch frame.Field.BlockWithActiveBlock(i, j) {
-			case tetris.BlockNone:
+			switch frame.Field.Tetrimino(i, j) {
+			case common.TetriminoNone:
 				fieldContent += "  "
-			case tetris.BlockI:
+			case common.I:
 				fieldContent += "[:darkcyan]  [:black]"
-			case tetris.BlockJ:
+			case common.J:
 				fieldContent += "[:blue]  [:black]"
-			case tetris.BlockL:
+			case common.L:
 				fieldContent += "[:darkorange]  [:black]"
-			case tetris.BlockO:
+			case common.O:
 				fieldContent += "[:orange]  [:black]"
-			case tetris.BlockS:
+			case common.S:
 				fieldContent += "[:lightgreen]  [:black]"
-			case tetris.BlockT:
+			case common.T:
 				fieldContent += "[:mediumpurple]  [:black]"
-			case tetris.BlockZ:
+			case common.Z:
 				fieldContent += "[:red]  [:black]"
 			}
 		}
@@ -434,8 +435,8 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 	_, _ = fmt.Fprint(ui.fieldBox, fieldContent)
 
 	ui.holdBox.Clear()
-	if frame.HoldingBlock != nil {
-		_, _ = fmt.Fprint(ui.holdBox, paintTetrisBlock(*frame.HoldingBlock))
+	if frame.HoldingTetrimino != nil {
+		_, _ = fmt.Fprint(ui.holdBox, paintTetrisTetrimino(*frame.HoldingTetrimino))
 	}
 	ui.scoreBox.Clear()
 	_, _ = fmt.Fprintf(ui.scoreBox, "%d", frame.Score)
@@ -444,8 +445,8 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 	ui.linesBox.Clear()
 	_, _ = fmt.Fprintf(ui.linesBox, "%d", frame.ClearLines)
 	ui.nextBox.Clear()
-	for _, b := range frame.NextBlocks {
-		_, _ = fmt.Fprint(ui.nextBox, paintTetrisBlock(b))
+	for _, b := range frame.NextTetriminos {
+		_, _ = fmt.Fprint(ui.nextBox, paintTetrisTetrimino(b))
 	}
 
 	// 游戏结束
@@ -469,41 +470,41 @@ func (ui *GameUI) clearGameInfo() {
 	ui.fieldBox.Clear()
 }
 
-// paintTetrisBlock 绘制方块
-func paintTetrisBlock(blockType tetris.BlockType) string {
-	switch blockType {
-	case tetris.BlockNone:
-	case tetris.BlockI:
+// paintTetrisTetrimino 绘制方块
+func paintTetrisTetrimino(tetriminoType common.TetriminoType) string {
+	switch tetriminoType {
+	case common.TetriminoNone:
+	case common.I:
 		return `
 
  [:darkcyan]        [:black]
 `
-	case tetris.BlockJ:
+	case common.J:
 		return `
   [:blue]  [:black]
   [:blue]      [:black]
 `
-	case tetris.BlockL:
+	case common.L:
 		return `
       [:darkorange]  [:black]
   [:darkorange]      [:black]
 `
-	case tetris.BlockO:
+	case common.O:
 		return `
    [:orange]    [:black]
    [:orange]    [:black]
 `
-	case tetris.BlockS:
+	case common.S:
 		return `
     [:lightgreen]    [:black]
   [:lightgreen]    [:black]
 `
-	case tetris.BlockT:
+	case common.T:
 		return `
     [:mediumpurple]  [:black]
   [:mediumpurple]      [:black]
 `
-	case tetris.BlockZ:
+	case common.Z:
 		return `
   [:red]    [:black]
     [:red]    [:black]

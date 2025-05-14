@@ -3,6 +3,8 @@ package tetris
 import (
 	"context"
 	"fmt"
+
+	"github.com/yhlooo/go-tetris/pkg/tetris/common"
 )
 
 // Tetris 游戏实例
@@ -25,10 +27,10 @@ type Tetris interface {
 	SetDebug(enabled bool)
 	// Debug 返回是否调试模式
 	Debug() bool
-	// ChangeActiveBlockType 更换活跃方块类型
+	// ChangeActiveTetriminoType 更换活跃方块类型
 	//
 	// 仅在调试模式下生效
-	ChangeActiveBlockType(blockType BlockType) error
+	ChangeActiveTetriminoType(tetriminoType common.TetriminoType) error
 
 	// Input 输入操作指令
 	Input(op Op)
@@ -118,11 +120,11 @@ func (op Op) String() string {
 // 包含某时刻游戏画面应显示的信息，如方块位置、得分等
 type Frame struct {
 	// 场上方块填充情况
-	Field FieldReader
+	Field common.FieldReader
 	// 暂存的方块
-	HoldingBlock *BlockType
+	HoldingTetrimino *common.TetriminoType
 	// 下几个方块
-	NextBlocks []BlockType
+	NextTetriminos []common.TetriminoType
 	// 级别
 	Level int
 	// 分数

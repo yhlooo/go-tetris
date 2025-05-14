@@ -1,62 +1,52 @@
-package tetris
+package common
 
 import "fmt"
 
-// Block 方块
-type Block struct {
-	// 方块类型
-	Type BlockType
-	// 方块位置
-	Row, Column int
-	// 方块方向
-	Dir BlockDir
-}
+// TetriminoType 方块类型
+type TetriminoType byte
 
-// BlockType 方块类型
-type BlockType byte
-
-// BlockType 的枚举
+// TetriminoType 的枚举
 const (
-	BlockNone BlockType = iota
-	BlockI
-	BlockJ
-	BlockL
-	BlockO
-	BlockS
-	BlockT
-	BlockZ
+	TetriminoNone TetriminoType = iota
+	I
+	J
+	L
+	O
+	S
+	T
+	Z
 )
 
 // String 返回字符串表示
-func (t BlockType) String() string {
+func (t TetriminoType) String() string {
 	switch t {
-	case BlockNone:
+	case TetriminoNone:
 		return "None"
-	case BlockI:
+	case I:
 		return "I"
-	case BlockJ:
+	case J:
 		return "J"
-	case BlockL:
+	case L:
 		return "L"
-	case BlockO:
+	case O:
 		return "O"
-	case BlockS:
+	case S:
 		return "S"
-	case BlockT:
+	case T:
 		return "T"
-	case BlockZ:
+	case Z:
 		return "Z"
 	}
 	return fmt.Sprintf("Invalid(%d)", t)
 }
 
-// BlockDir 方块方向
-type BlockDir byte
+// TetriminoDir 方块方向
+type TetriminoDir byte
 
-// BlockDir 的枚举
+// TetriminoDir 的枚举
 const (
 	// Dir0 初始状态
-	Dir0 BlockDir = iota
+	Dir0 TetriminoDir = iota
 	// DirR 顺时针旋转 90 度
 	DirR
 	// Dir2 旋转 180 度
@@ -66,7 +56,7 @@ const (
 )
 
 // String 返回字符串表示
-func (d BlockDir) String() string {
+func (d TetriminoDir) String() string {
 	switch d {
 	case Dir0:
 		return "0"
@@ -81,8 +71,8 @@ func (d BlockDir) String() string {
 }
 
 var (
-	// blockShapes 方块形状
-	blockShapes = [7][4][4]Location{
+	// tetriminoShapes 方块形状
+	tetriminoShapes = [7][4][4]Location{
 		// I
 		{
 			{{2, 0}, {2, 1}, {2, 2}, {2, 3}},
@@ -135,20 +125,30 @@ var (
 	}
 )
 
+// Tetrimino 方块
+type Tetrimino struct {
+	// 方块类型
+	Type TetriminoType
+	// 方块位置
+	Row, Column int
+	// 方块方向
+	Dir TetriminoDir
+}
+
 // Cells 获取方块各格坐标
 //
 // 每个元素是一个方格的坐标
-func (b Block) Cells() [4]Location {
+func (t Tetrimino) Cells() [4]Location {
 	// 获取相对方块定位点的偏移
-	if b.Type < 1 || b.Type > 7 || b.Dir < 0 || b.Dir > 3 {
+	if t.Type < 1 || t.Type > 7 || t.Dir < 0 || t.Dir > 3 {
 		return [4]Location{}
 	}
-	ret := blockShapes[b.Type-1][b.Dir]
+	ret := tetriminoShapes[t.Type-1][t.Dir]
 
 	// 加上方块本身位置
 	for i := range ret {
-		ret[i][0] += b.Row
-		ret[i][1] += b.Column
+		ret[i][0] += t.Row
+		ret[i][1] += t.Column
 	}
 
 	return ret

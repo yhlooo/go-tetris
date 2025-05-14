@@ -29,9 +29,9 @@ func (ui *GameUI) renderGame() app.UI {
 	}
 	return app.Div().Class("tetris-game").Body(
 		app.Div().Class("tetris-game-sidebar tetris-game-sidebar-left").Body(
-			app.Div().Class("tetris-block-booth").Body(
+			app.Div().Class("tetris-tetrimino-booth").Body(
 				app.Div().Class("tetris-game-sub-title").Text("HOLD"),
-				app.Div().Class("tetris-block").Body(ui.hold),
+				app.Div().Class("tetris-tetrimino").Body(ui.hold),
 			),
 			app.Div().Class("tetris-score-box").Body(
 				app.Div().Body(
@@ -76,10 +76,10 @@ func (ui *GameUI) renderGame() app.UI {
 			"height": strconv.Itoa(fieldHeight) + "px",
 		}),
 		app.Div().Class("tetris-game-sidebar tetris-game-sidebar-right").Body(
-			app.Div().Class("tetris-block-booth").Body(
+			app.Div().Class("tetris-tetrimino-booth").Body(
 				app.Div().Class("tetris-game-sub-title").Text("NEXT"),
 				app.Range(ui.next).Slice(func(i int) app.UI {
-					return app.Div().Class("tetris-block").Body(ui.next[i])
+					return app.Div().Class("tetris-tetrimino").Body(ui.next[i])
 				}),
 			),
 			app.Div().

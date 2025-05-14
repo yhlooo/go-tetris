@@ -55,10 +55,10 @@ func (ui *GameUI) Render() app.UI {
 // OnMount 挂载元素时
 func (ui *GameUI) OnMount(ctx app.Context) {
 	app.Log("tetris component mount")
-	holdAndNextColors := DefaultBlockColors
+	holdAndNextColors := DefaultTetriminoColors
 	holdAndNextColors.Background = holdAndNextColors.Border
 	ui.hold = NewTetrisGrid(2, 3, holdAndNextColors)
-	ui.field = NewTetrisGrid(20, 10, DefaultBlockColors)
+	ui.field = NewTetrisGrid(20, 10, DefaultTetriminoColors)
 	ui.next[0] = NewTetrisGrid(2, 3, holdAndNextColors)
 	ui.next[1] = NewTetrisGrid(2, 3, holdAndNextColors)
 	ui.next[2] = NewTetrisGrid(2, 3, holdAndNextColors)

@@ -5,14 +5,14 @@ import (
 
 	"github.com/maxence-charriere/go-app/v10/pkg/app"
 
-	"github.com/yhlooo/go-tetris/pkg/tetris"
+	"github.com/yhlooo/go-tetris/pkg/tetris/common"
 )
 
 // NewTetrisGrid 创建 TetrisGrid
-func NewTetrisGrid(rows, cols int, colors BlockColors) *TetrisGrid {
-	data := make([][]tetris.BlockType, rows)
+func NewTetrisGrid(rows, cols int, colors TetriminoColors) *TetrisGrid {
+	data := make([][]common.TetriminoType, rows)
 	for i := range data {
-		data[i] = make([]tetris.BlockType, cols)
+		data[i] = make([]common.TetriminoType, cols)
 	}
 	grid := &TetrisGrid{
 		cellWidth:   20,
@@ -32,9 +32,9 @@ type TetrisGrid struct {
 
 	cellWidth   int
 	borderWidth int
-	colors      BlockColors
+	colors      TetriminoColors
 
-	data [][]tetris.BlockType
+	data [][]common.TetriminoType
 
 	rows, cols    int
 	width, height int
@@ -51,11 +51,11 @@ func (grid *TetrisGrid) Render() app.UI {
 // OnMount 挂载元素时
 func (grid *TetrisGrid) OnMount(_ app.Context) {
 	grid.paintBorder()
-	grid.paintBlocks()
+	grid.paintTetriminos()
 }
 
-// UpdateBlocks 更新方块
-func (grid *TetrisGrid) UpdateBlocks(data [][]tetris.BlockType) {
+// UpdateTetriminos 更新方块
+func (grid *TetrisGrid) UpdateTetriminos(data [][]common.TetriminoType) {
 	grid.data = data
 	rows := len(data)
 	cols := grid.cols
@@ -65,7 +65,7 @@ func (grid *TetrisGrid) UpdateBlocks(data [][]tetris.BlockType) {
 	if rows != grid.rows || cols != grid.cols {
 		grid.resize(rows, cols)
 	}
-	grid.paintBlocks()
+	grid.paintTetriminos()
 }
 
 // Size 获取当前大小
@@ -86,16 +86,16 @@ func (grid *TetrisGrid) resize(rows, cols int) {
 	}
 }
 
-// paintBlocks 绘制方块
-func (grid *TetrisGrid) paintBlocks() {
+// paintTetriminos 绘制方块
+func (grid *TetrisGrid) paintTetriminos() {
 	if grid.canvas.JSValue() == nil {
 		return
 	}
 	canvasCTX := grid.canvas.JSValue().Call("getContext", "2d")
 	currentColor := ""
 	for i, row := range grid.data {
-		for j, block := range row {
-			color := grid.colors.Block(block)
+		for j, tetrimino := range row {
+			color := grid.colors.Tetrimino(tetrimino)
 			if color != currentColor {
 				canvasCTX.Set("fillStyle", color)
 				currentColor = color
@@ -130,97 +130,97 @@ func (grid *TetrisGrid) paintBorder() {
 	canvasCTX.Call("stroke")
 }
 
-// newBlockGridData 创建方块网格数据
-func newBlockGridData(blockType tetris.BlockType) [][]tetris.BlockType {
-	switch blockType {
-	case tetris.BlockI:
-		return [][]tetris.BlockType{
-			{tetris.BlockI, tetris.BlockI, tetris.BlockI, tetris.BlockI},
-			{tetris.BlockNone, tetris.BlockNone, tetris.BlockNone, tetris.BlockNone},
+// newTetriminoGridData 创建方块网格数据
+func newTetriminoGridData(tetriminoType common.TetriminoType) [][]common.TetriminoType {
+	switch tetriminoType {
+	case common.I:
+		return [][]common.TetriminoType{
+			{common.I, common.I, common.I, common.I},
+			{common.TetriminoNone, common.TetriminoNone, common.TetriminoNone, common.TetriminoNone},
 		}
-	case tetris.BlockJ:
-		return [][]tetris.BlockType{
-			{tetris.BlockJ, tetris.BlockJ, tetris.BlockJ},
-			{tetris.BlockJ, tetris.BlockNone, tetris.BlockNone},
+	case common.J:
+		return [][]common.TetriminoType{
+			{common.J, common.J, common.J},
+			{common.J, common.TetriminoNone, common.TetriminoNone},
 		}
-	case tetris.BlockL:
-		return [][]tetris.BlockType{
-			{tetris.BlockL, tetris.BlockL, tetris.BlockL},
-			{tetris.BlockNone, tetris.BlockNone, tetris.BlockL},
+	case common.L:
+		return [][]common.TetriminoType{
+			{common.L, common.L, common.L},
+			{common.TetriminoNone, common.TetriminoNone, common.L},
 		}
-	case tetris.BlockO:
-		return [][]tetris.BlockType{
-			{tetris.BlockO, tetris.BlockO},
-			{tetris.BlockO, tetris.BlockO},
+	case common.O:
+		return [][]common.TetriminoType{
+			{common.O, common.O},
+			{common.O, common.O},
 		}
-	case tetris.BlockS:
-		return [][]tetris.BlockType{
-			{tetris.BlockS, tetris.BlockS, tetris.BlockNone},
-			{tetris.BlockNone, tetris.BlockS, tetris.BlockS},
+	case common.S:
+		return [][]common.TetriminoType{
+			{common.S, common.S, common.TetriminoNone},
+			{common.TetriminoNone, common.S, common.S},
 		}
-	case tetris.BlockT:
-		return [][]tetris.BlockType{
-			{tetris.BlockT, tetris.BlockT, tetris.BlockT},
-			{tetris.BlockNone, tetris.BlockT, tetris.BlockNone},
+	case common.T:
+		return [][]common.TetriminoType{
+			{common.T, common.T, common.T},
+			{common.TetriminoNone, common.T, common.TetriminoNone},
 		}
-	case tetris.BlockZ:
-		return [][]tetris.BlockType{
-			{tetris.BlockNone, tetris.BlockZ, tetris.BlockZ},
-			{tetris.BlockZ, tetris.BlockZ, tetris.BlockNone},
+	case common.Z:
+		return [][]common.TetriminoType{
+			{common.TetriminoNone, common.Z, common.Z},
+			{common.Z, common.Z, common.TetriminoNone},
 		}
 	default:
-		return [][]tetris.BlockType{
-			{tetris.BlockNone, tetris.BlockNone, tetris.BlockNone},
-			{tetris.BlockNone, tetris.BlockNone, tetris.BlockNone},
+		return [][]common.TetriminoType{
+			{common.TetriminoNone, common.TetriminoNone, common.TetriminoNone},
+			{common.TetriminoNone, common.TetriminoNone, common.TetriminoNone},
 		}
 	}
 }
 
-// BlockColors 方块颜色
-type BlockColors struct {
+// TetriminoColors 方块颜色
+type TetriminoColors struct {
 	Border     string
 	Background string
-	BlockI     string
-	BlockJ     string
-	BlockL     string
-	BlockO     string
-	BlockS     string
-	BlockT     string
-	BlockZ     string
+	TetriminoI string
+	TetriminoJ string
+	TetriminoL string
+	TetriminoO string
+	TetriminoS string
+	TetriminoT string
+	TetriminoZ string
 }
 
-// Block 获取指定方块颜色
-func (colors BlockColors) Block(blockType tetris.BlockType) string {
-	switch blockType {
-	case tetris.BlockNone:
+// Tetrimino 获取指定方块颜色
+func (colors TetriminoColors) Tetrimino(tetriminoType common.TetriminoType) string {
+	switch tetriminoType {
+	case common.TetriminoNone:
 		return colors.Background
-	case tetris.BlockI:
-		return colors.BlockI
-	case tetris.BlockJ:
-		return colors.BlockJ
-	case tetris.BlockL:
-		return colors.BlockL
-	case tetris.BlockO:
-		return colors.BlockO
-	case tetris.BlockS:
-		return colors.BlockS
-	case tetris.BlockT:
-		return colors.BlockT
-	case tetris.BlockZ:
-		return colors.BlockZ
+	case common.I:
+		return colors.TetriminoI
+	case common.J:
+		return colors.TetriminoJ
+	case common.L:
+		return colors.TetriminoL
+	case common.O:
+		return colors.TetriminoO
+	case common.S:
+		return colors.TetriminoS
+	case common.T:
+		return colors.TetriminoT
+	case common.Z:
+		return colors.TetriminoZ
 	}
 	return colors.Background
 }
 
-// DefaultBlockColors 默认颜色
-var DefaultBlockColors = BlockColors{
+// DefaultTetriminoColors 默认颜色
+var DefaultTetriminoColors = TetriminoColors{
 	Border:     "#1b1b1b",
 	Background: "#000000",
-	BlockI:     "#67c4ec",
-	BlockJ:     "#5f64a9",
-	BlockL:     "#df8136",
-	BlockO:     "#f0d543",
-	BlockS:     "#62b451",
-	BlockT:     "#a25399",
-	BlockZ:     "#db3e32",
+	TetriminoI: "#67c4ec",
+	TetriminoJ: "#5f64a9",
+	TetriminoL: "#df8136",
+	TetriminoO: "#f0d543",
+	TetriminoS: "#62b451",
+	TetriminoT: "#a25399",
+	TetriminoZ: "#db3e32",
 }

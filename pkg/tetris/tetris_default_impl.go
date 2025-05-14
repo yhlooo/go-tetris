@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+
+	"github.com/yhlooo/go-tetris/pkg/tetris/common"
+	"github.com/yhlooo/go-tetris/pkg/tetris/rotationsystems"
 )
 
 const framesChLen = 16
@@ -38,9 +41,9 @@ func NewTetris(opts Options) Tetris {
 
 		logger: opts.Logger,
 	}
-	t.field = NewField(opts.Rows, opts.Columns, t.newBlock(BlockNone))
-	for i := 0; i < opts.NextBlock+1; i++ {
-		t.nextBlocks = append(t.nextBlocks, t.newBlockType())
+	t.field = common.NewField(opts.Rows, opts.Columns, t.newTetrimino(common.TetriminoNone))
+	for i := 0; i < opts.ShowNextTetriminos+1; i++ {
+		t.nextTetriminos = append(t.nextTetriminos, t.newTetriminoType())
 	}
 	return t
 }
@@ -51,13 +54,13 @@ type defaultTetris struct {
 	startOnce sync.Once
 	cancel    context.CancelFunc
 
-	rows, cols   int
-	field        *Field
-	nextBlocks   []BlockType
-	holdingBlock *BlockType
-	level        int
-	score        int
-	clearLines   int
+	rows, cols       int
+	field            *common.Field
+	nextTetriminos   []common.TetriminoType
+	holdingTetrimino *common.TetriminoType
+	level            int
+	score            int
+	clearLines       int
 
 	holed   bool
 	tickets int64
@@ -73,7 +76,7 @@ type defaultTetris struct {
 	freq          int
 
 	scorer         Scorer
-	rotationSystem RotationSystem
+	rotationSystem rotationsystems.RotationSystem
 
 	debug    bool
 	state    GameState
@@ -155,8 +158,8 @@ func (t *defaultTetris) Debug() bool {
 	return t.debug
 }
 
-// ChangeActiveBlockType 更换活跃方块类型
-func (t *defaultTetris) ChangeActiveBlockType(blockType BlockType) error {
+// ChangeActiveTetriminoType 更换活跃方块类型
+func (t *defaultTetris) ChangeActiveTetriminoType(tetriminoType common.TetriminoType) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -167,9 +170,9 @@ func (t *defaultTetris) ChangeActiveBlockType(blockType BlockType) error {
 		return fmt.Errorf("not in running or paused state: %s", t.state)
 	}
 
-	b := t.field.ActiveBlock()
+	b := t.field.ActiveTetrimino()
 	oldType := b.Type
-	b.Type = blockType
+	b.Type = tetriminoType
 
 	// 不合法，还原
 	if !t.field.IsValid() {
@@ -177,7 +180,7 @@ func (t *defaultTetris) ChangeActiveBlockType(blockType BlockType) error {
 		return fmt.Errorf("insufficient space")
 	}
 
-	t.logger.V(1).Info(fmt.Sprintf("change block type: %s -> %s", oldType, blockType))
+	t.logger.V(1).Info(fmt.Sprintf("change tetrimino type: %s -> %s", oldType, tetriminoType))
 	t.sendFrame()
 
 	return nil
@@ -196,13 +199,13 @@ func (t *defaultTetris) Input(op Op) {
 	changed := false
 	switch op {
 	case OpMoveRight:
-		changed = t.field.MoveActiveBlock(0, 1)
+		changed = t.field.MoveActiveTetrimino(0, 1)
 		if changed {
 			t.notMove = false
 		}
 		t.logger.V(1).Info(fmt.Sprintf("move right, ret: %t", changed))
 	case OpMoveLeft:
-		changed = t.field.MoveActiveBlock(0, -1)
+		changed = t.field.MoveActiveTetrimino(0, -1)
 		if changed {
 			t.notMove = false
 		}
@@ -221,7 +224,7 @@ func (t *defaultTetris) Input(op Op) {
 		t.logger.V(1).Info(fmt.Sprintf("rotate left, ret: %t", changed))
 	case OpSoftDrop:
 		t.logger.V(1).Info("soft drop")
-		if ok := t.field.MoveActiveBlock(-1, 0); ok {
+		if ok := t.field.MoveActiveTetrimino(-1, 0); ok {
 			t.notMove = false
 			t.calcScore(ScoreEvent{SoftDrop: 1})
 		}
@@ -230,36 +233,36 @@ func (t *defaultTetris) Input(op Op) {
 	case OpHardDrop:
 		t.logger.V(1).Info("hard drop")
 		dropLines := 0
-		for t.field.MoveActiveBlock(-1, 0) {
+		for t.field.MoveActiveTetrimino(-1, 0) {
 			t.notMove = false
 			dropLines++
 		}
 		t.calcScore(ScoreEvent{HardDrop: dropLines})
-		t.pinBlock()
+		t.pinTetrimino()
 		t.tickets = 0
-		t.logger.V(1).Info("pin block")
+		t.logger.V(1).Info("pin tetrimino")
 		changed = true
 	case OpHold:
 		if !t.holed && t.holdEnabled {
-			oldActive := t.field.ActiveBlock().Type
+			oldActive := t.field.ActiveTetrimino().Type
 			var ok bool
-			if t.holdingBlock != nil {
-				ok = t.field.ChangeActiveBlock(t.newBlock(*t.holdingBlock))
+			if t.holdingTetrimino != nil {
+				ok = t.field.ChangeActiveTetrimino(t.newTetrimino(*t.holdingTetrimino))
 			} else {
-				ok = t.field.ChangeActiveBlock(t.newBlock(t.nextBlocks[0]))
+				ok = t.field.ChangeActiveTetrimino(t.newTetrimino(t.nextTetriminos[0]))
 				if ok {
-					t.nextBlocks = append(t.nextBlocks[1:], t.newBlockType())
+					t.nextTetriminos = append(t.nextTetriminos[1:], t.newTetriminoType())
 				}
 			}
 			if ok {
-				t.holdingBlock = &oldActive
+				t.holdingTetrimino = &oldActive
 				t.holed = true
 				t.notMove = false
 			}
 			changed = ok
-			t.logger.V(1).Info(fmt.Sprintf("hold block, ret: %t", ok))
+			t.logger.V(1).Info(fmt.Sprintf("hold tetrimino, ret: %t", ok))
 		} else {
-			t.logger.V(1).Info("can not hold block: block already holed")
+			t.logger.V(1).Info("can not hold tetrimino: tetrimino already holed")
 		}
 	}
 	if changed {
@@ -277,13 +280,13 @@ func (t *defaultTetris) Frames() <-chan Frame {
 // CurrentFrame 获取当前帧
 func (t *defaultTetris) CurrentFrame() Frame {
 	return Frame{
-		Field:        t.field,
-		HoldingBlock: t.holdingBlock,
-		NextBlocks:   t.nextBlocks[:len(t.nextBlocks)-1],
-		Level:        t.level,
-		Score:        t.score,
-		ClearLines:   t.clearLines,
-		GameOver:     t.state == StateFinished,
+		Field:            t.field,
+		HoldingTetrimino: t.holdingTetrimino,
+		NextTetriminos:   t.nextTetriminos[:len(t.nextTetriminos)-1],
+		Level:            t.level,
+		Score:            t.score,
+		ClearLines:       t.clearLines,
+		GameOver:         t.state == StateFinished,
 	}
 }
 
@@ -309,9 +312,9 @@ func (t *defaultTetris) run(ctx context.Context) {
 		if t.tickets > int64(float64(t.freq)/speed) {
 			// 到时间下落一格了
 			t.logger.V(1).Info("auto drop")
-			if ok := t.field.MoveActiveBlock(-1, 0); !ok {
-				t.pinBlock()
-				t.logger.V(1).Info("pin block")
+			if ok := t.field.MoveActiveTetrimino(-1, 0); !ok {
+				t.pinTetrimino()
+				t.logger.V(1).Info("pin tetrimino")
 			} else {
 				t.notMove = false
 			}
@@ -322,16 +325,16 @@ func (t *defaultTetris) run(ctx context.Context) {
 	}
 }
 
-// pinBlock 钉住当前活跃方块
-func (t *defaultTetris) pinBlock() {
-	tSpin, clearLines, ok := t.field.PinActiveBlock(t.newBlock(t.nextBlocks[0]))
+// pinTetrimino 钉住当前活跃方块
+func (t *defaultTetris) pinTetrimino() {
+	tSpin, clearLines, ok := t.field.PinActiveTetrimino(t.newTetrimino(t.nextTetriminos[0]))
 	t.calcScore(ScoreEvent{TSpin: tSpin && t.notMove, ClearLines: clearLines})
 	t.clearLines += clearLines
 	t.level = t.clearLines/t.linesPerLevel + 1
 	if !ok {
 		t.state = StateFinished
 	}
-	t.nextBlocks = append(t.nextBlocks[1:], t.newBlockType())
+	t.nextTetriminos = append(t.nextTetriminos[1:], t.newTetriminoType())
 	t.holed = false
 }
 
@@ -345,9 +348,9 @@ func (t *defaultTetris) sendFrame() bool {
 	return true
 }
 
-// newBlockType 创建新方块类型
-func (t *defaultTetris) newBlockType() BlockType {
-	return BlockType(t.rand.Int())%7 + 1
+// newTetriminoType 创建新方块类型
+func (t *defaultTetris) newTetriminoType() common.TetriminoType {
+	return common.TetriminoType(t.rand.Int())%7 + 1
 }
 
 // calcScore 计算分数
@@ -359,26 +362,26 @@ func (t *defaultTetris) calcScore(event ScoreEvent) {
 	}
 }
 
-// newBlock 创建新方块
-func (t *defaultTetris) newBlock(blockType BlockType) *Block {
-	if blockType == BlockNone {
-		blockType = t.newBlockType()
+// newTetrimino 创建新方块
+func (t *defaultTetris) newTetrimino(tetriminoType common.TetriminoType) *common.Tetrimino {
+	if tetriminoType == common.TetriminoNone {
+		tetriminoType = t.newTetriminoType()
 	}
 
 	// 确定位置，放在居中上方刚好露出完整方块的位置
 	col := t.cols/2 - 2
 	row := t.rows - 3
-	switch blockType {
-	case BlockO:
+	switch tetriminoType {
+	case common.O:
 		col = t.cols/2 - 1
 		row = t.rows - 2
 	default:
 	}
 
-	return &Block{
-		Type:   blockType,
+	return &common.Tetrimino{
+		Type:   tetriminoType,
 		Row:    row,
 		Column: col,
-		Dir:    Dir0,
+		Dir:    common.Dir0,
 	}
 }
