@@ -72,8 +72,7 @@ GOOS=js GOARCH=wasm go build -o web/app.wasm ./cmd/tetris-wasm && go run ./cmd/t
 ### 已实现特性
 
 - 随机方块生成器
-  - [ ] 7-Bag
-  - [x] 完全随机
+  - [x] 7-Bag
 - 旋转系统
   - [x] 超级旋转系统 (Super Rotation System, SRS)
 

@@ -3,10 +3,10 @@ package tetris
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/go-logr/logr"
 
+	"github.com/yhlooo/go-tetris/pkg/tetris/randomizer"
 	"github.com/yhlooo/go-tetris/pkg/tetris/rotationsystems"
 )
 
@@ -20,9 +20,6 @@ type Options struct {
 	// 提示的下个方块数量
 	ShowNextTetriminos int
 
-	// 随机数种子
-	RandSeed int64
-
 	// 初始级别
 	InitialLevel int
 	// 每级别需要消除多少行
@@ -32,6 +29,8 @@ type Options struct {
 	// 处理频率（单位： ticket/s ）
 	Frequency int
 
+	// 随机生成器
+	Randomizer randomizer.Randomizer
 	// 评分器
 	Scorer Scorer
 	// 旋转系统
@@ -49,10 +48,6 @@ func (opts *Options) Complete() {
 		opts.Columns = 10
 	}
 
-	if opts.RandSeed == 0 {
-		opts.RandSeed = time.Now().UnixNano()
-	}
-
 	if opts.InitialLevel == 0 {
 		opts.InitialLevel = 1
 	}
@@ -66,6 +61,9 @@ func (opts *Options) Complete() {
 		opts.Frequency = 1000
 	}
 
+	if opts.Randomizer == nil {
+		opts.Randomizer = &randomizer.Bag7{}
+	}
 	if opts.Scorer == nil {
 		opts.Scorer = DefaultScorer()
 	}
@@ -100,13 +98,12 @@ var DefaultOptions = Options{
 	HoldEnabled:        true,
 	ShowNextTetriminos: 3,
 
-	RandSeed: 0,
-
 	InitialLevel:    1,
 	LinesPerLevel:   10,
 	SpeedController: DefaultSpeedController,
 	Frequency:       60,
 
+	Randomizer:     &randomizer.Bag7{},
 	Scorer:         DefaultScorer(),
 	RotationSystem: rotationsystems.SuperRotationSystem{},
 

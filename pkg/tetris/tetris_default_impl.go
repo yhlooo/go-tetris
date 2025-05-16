@@ -3,7 +3,6 @@ package tetris
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/yhlooo/go-tetris/pkg/tetris/common"
+	"github.com/yhlooo/go-tetris/pkg/tetris/randomizer"
 	"github.com/yhlooo/go-tetris/pkg/tetris/rotationsystems"
 )
 
@@ -26,13 +26,12 @@ func NewTetris(opts Options) Tetris {
 
 		holdEnabled: opts.HoldEnabled,
 
-		rand: rand.New(rand.NewSource(opts.RandSeed)),
-
 		linesPerLevel: opts.LinesPerLevel,
 		ticker:        time.NewTicker(time.Second / time.Duration(opts.Frequency)),
 		speed:         opts.SpeedController,
 		freq:          opts.Frequency,
 
+		randomizer:     opts.Randomizer,
 		scorer:         opts.Scorer,
 		rotationSystem: opts.RotationSystem,
 
@@ -43,7 +42,7 @@ func NewTetris(opts Options) Tetris {
 	}
 	t.field = common.NewField(opts.Rows, opts.Columns, t.newTetrimino(common.TetriminoNone))
 	for i := 0; i < opts.ShowNextTetriminos+1; i++ {
-		t.nextTetriminos = append(t.nextTetriminos, t.newTetriminoType())
+		t.nextTetriminos = append(t.nextTetriminos, t.randomizer.Next())
 	}
 	return t
 }
@@ -68,13 +67,12 @@ type defaultTetris struct {
 
 	holdEnabled bool
 
-	rand *rand.Rand
-
 	linesPerLevel int
 	ticker        *time.Ticker
 	speed         SpeedController
 	freq          int
 
+	randomizer     randomizer.Randomizer
 	scorer         Scorer
 	rotationSystem rotationsystems.RotationSystem
 
@@ -251,7 +249,7 @@ func (t *defaultTetris) Input(op Op) {
 			} else {
 				ok = t.field.ChangeActiveTetrimino(t.newTetrimino(t.nextTetriminos[0]))
 				if ok {
-					t.nextTetriminos = append(t.nextTetriminos[1:], t.newTetriminoType())
+					t.nextTetriminos = append(t.nextTetriminos[1:], t.randomizer.Next())
 				}
 			}
 			if ok {
@@ -334,7 +332,7 @@ func (t *defaultTetris) pinTetrimino() {
 	if !ok {
 		t.state = StateFinished
 	}
-	t.nextTetriminos = append(t.nextTetriminos[1:], t.newTetriminoType())
+	t.nextTetriminos = append(t.nextTetriminos[1:], t.randomizer.Next())
 	t.holed = false
 }
 
@@ -346,11 +344,6 @@ func (t *defaultTetris) sendFrame() bool {
 		return false
 	}
 	return true
-}
-
-// newTetriminoType 创建新方块类型
-func (t *defaultTetris) newTetriminoType() common.TetriminoType {
-	return common.TetriminoType(t.rand.Int())%7 + 1
 }
 
 // calcScore 计算分数
@@ -365,7 +358,7 @@ func (t *defaultTetris) calcScore(event ScoreEvent) {
 // newTetrimino 创建新方块
 func (t *defaultTetris) newTetrimino(tetriminoType common.TetriminoType) *common.Tetrimino {
 	if tetriminoType == common.TetriminoNone {
-		tetriminoType = t.newTetriminoType()
+		tetriminoType = t.randomizer.Next()
 	}
 
 	// 确定位置，放在居中上方刚好露出完整方块的位置
