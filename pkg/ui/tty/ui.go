@@ -409,26 +409,49 @@ func (ui *GameUI) paintGameLoop(ch <-chan tetris.Frame) {
 // paintGameFrame 绘制游戏一帧
 func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 	fieldContent := ""
+	cells := frame.Field.Cells()
 	for i := 19; i >= 0; i-- {
 		for j := 0; j < 10; j++ {
-			switch frame.Field.Tetrimino(i, j) {
-			case common.TetriminoNone:
-				fieldContent += "  "
-			case common.I:
-				fieldContent += "[:darkcyan]  [:black]"
-			case common.J:
-				fieldContent += "[:blue]  [:black]"
-			case common.L:
-				fieldContent += "[:darkorange]  [:black]"
-			case common.O:
-				fieldContent += "[:orange]  [:black]"
-			case common.S:
-				fieldContent += "[:lightgreen]  [:black]"
-			case common.T:
-				fieldContent += "[:mediumpurple]  [:black]"
-			case common.Z:
-				fieldContent += "[:red]  [:black]"
+			if cells[i][j].Shadow {
+				switch cells[i][j].Type {
+				case common.TetriminoNone:
+					fieldContent += "  "
+				case common.I:
+					fieldContent += "[darkcyan]..[black]"
+				case common.J:
+					fieldContent += "[blue]..[black]"
+				case common.L:
+					fieldContent += "[darkorange]..[black]"
+				case common.O:
+					fieldContent += "[orange]..[black]"
+				case common.S:
+					fieldContent += "[lightgreen]..[black]"
+				case common.T:
+					fieldContent += "[mediumpurple]..[black]"
+				case common.Z:
+					fieldContent += "[red]..[black]"
+				}
+			} else {
+				switch cells[i][j].Type {
+				case common.TetriminoNone:
+					fieldContent += "  "
+				case common.I:
+					fieldContent += "[:darkcyan]  [:black]"
+				case common.J:
+					fieldContent += "[:blue]  [:black]"
+				case common.L:
+					fieldContent += "[:darkorange]  [:black]"
+				case common.O:
+					fieldContent += "[:orange]  [:black]"
+				case common.S:
+					fieldContent += "[:lightgreen]  [:black]"
+				case common.T:
+					fieldContent += "[:mediumpurple]  [:black]"
+				case common.Z:
+					fieldContent += "[:red]  [:black]"
+				}
 			}
+
 		}
 	}
 	ui.fieldBox.Clear()

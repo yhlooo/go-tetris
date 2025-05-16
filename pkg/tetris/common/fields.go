@@ -6,12 +6,16 @@ type FieldReader interface {
 	Size() (rows, cols int)
 	// FilledTetrimino 获取指定位置已填充的方块类型
 	FilledTetrimino(row, col int) (TetriminoType, bool)
-	// Tetrimino 获取指定位置的方块类型，包含活跃方块
-	Tetrimino(row, col int) TetriminoType
-	// Tetriminos 获取所有位置方块，包含活跃方块
-	Tetriminos() [][]TetriminoType
+	// Cells 获取场上所有格子信息，包括固定块、活跃块、阴影块
+	Cells() [][]Cell
 	// ActiveTetrimino 获取当前活跃方块
 	ActiveTetrimino() *Tetrimino
+}
+
+// Cell 格子
+type Cell struct {
+	Type   TetriminoType
+	Shadow bool
 }
 
 // NewField 创建 Field
@@ -54,24 +58,41 @@ func (f *Field) Size() (rows, cols int) {
 	return f.rows, f.cols
 }
 
-// Tetriminos 获取所有位置方块，包含活跃方块
-func (f *Field) Tetriminos() [][]TetriminoType {
+// Cells 获取场上所有格子信息，包括固定块、活跃块、阴影块
+func (f *Field) Cells() [][]Cell {
 	// 拷贝已填充块
-	ret := make([][]TetriminoType, len(f.filled))
+	ret := make([][]Cell, len(f.filled))
 	for i := range ret {
-		ret[i] = make([]TetriminoType, len(f.filled[i]))
-		copy(ret[i], f.filled[i])
+		ret[i] = make([]Cell, len(f.filled[i]))
+		for j := range ret[i] {
+			ret[i][j].Type = f.filled[i][j]
+		}
 	}
 	if f.active == nil {
 		return ret
 	}
+
+	//添加阴影块
+	curActiveRow, curActiveCol := f.active.Row, f.active.Column
+	for f.MoveActiveTetrimino(-1, 0) {
+	}
+	for _, cell := range f.active.Cells() {
+		row := cell.Row()
+		col := cell.Column()
+		if row >= 0 && row < len(ret) && col >= 0 && col < len(ret[row]) {
+			ret[row][col].Type = f.active.Type
+			ret[row][col].Shadow = true
+		}
+	}
+	f.active.Row, f.active.Column = curActiveRow, curActiveCol
 
 	// 添加活跃方块
 	for _, cell := range f.active.Cells() {
 		row := cell.Row()
 		col := cell.Column()
 		if row >= 0 && row < len(ret) && col >= 0 && col < len(ret[row]) {
-			ret[row][col] = f.active.Type
+			ret[row][col].Type = f.active.Type
+			ret[row][col].Shadow = false
 		}
 	}
 

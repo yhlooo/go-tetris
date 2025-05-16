@@ -10,9 +10,9 @@ import (
 
 // NewTetrisGrid 创建 TetrisGrid
 func NewTetrisGrid(rows, cols int, colors TetriminoColors) *TetrisGrid {
-	data := make([][]common.TetriminoType, rows)
+	data := make([][]common.Cell, rows)
 	for i := range data {
-		data[i] = make([]common.TetriminoType, cols)
+		data[i] = make([]common.Cell, cols)
 	}
 	grid := &TetrisGrid{
 		cellWidth:   20,
@@ -34,7 +34,7 @@ type TetrisGrid struct {
 	borderWidth int
 	colors      TetriminoColors
 
-	data [][]common.TetriminoType
+	data [][]common.Cell
 
 	rows, cols    int
 	width, height int
@@ -55,7 +55,7 @@ func (grid *TetrisGrid) OnMount(_ app.Context) {
 }
 
 // UpdateTetriminos 更新方块
-func (grid *TetrisGrid) UpdateTetriminos(data [][]common.TetriminoType) {
+func (grid *TetrisGrid) UpdateTetriminos(data [][]common.Cell) {
 	grid.data = data
 	rows := len(data)
 	cols := grid.cols
@@ -92,18 +92,28 @@ func (grid *TetrisGrid) paintTetriminos() {
 		return
 	}
 	canvasCTX := grid.canvas.JSValue().Call("getContext", "2d")
-	currentColor := ""
-	for i, row := range grid.data {
-		for j, tetrimino := range row {
-			color := grid.colors.Tetrimino(tetrimino)
-			if color != currentColor {
-				canvasCTX.Set("fillStyle", color)
-				currentColor = color
-			}
 
+	canvasCTX.Set("lineWidth", grid.borderWidth)
+	borderOffset := grid.borderWidth / 2
+
+	for i, row := range grid.data {
+		for j, cell := range row {
+			color := grid.colors.Tetrimino(cell.Type)
 			x := j * (grid.cellWidth + grid.borderWidth)
 			y := (grid.rows - i - 1) * (grid.cellWidth + grid.borderWidth)
-			canvasCTX.Call("fillRect", x, y, grid.cellWidth, grid.cellWidth)
+			if cell.Shadow {
+				canvasCTX.Set("strokeStyle", color)
+				canvasCTX.Set("fillStyle", grid.colors.Background)
+				canvasCTX.Call("fillRect", x, y, grid.cellWidth, grid.cellWidth)
+				canvasCTX.Call(
+					"strokeRect",
+					x+borderOffset, y+borderOffset,
+					grid.cellWidth-grid.borderWidth, grid.cellWidth-grid.borderWidth,
+				)
+			} else {
+				canvasCTX.Set("fillStyle", color)
+				canvasCTX.Call("fillRect", x, y, grid.cellWidth, grid.cellWidth)
+			}
 		}
 	}
 }
@@ -131,47 +141,55 @@ func (grid *TetrisGrid) paintBorder() {
 }
 
 // newTetriminoGridData 创建方块网格数据
-func newTetriminoGridData(tetriminoType common.TetriminoType) [][]common.TetriminoType {
+func newTetriminoGridData(tetriminoType common.TetriminoType) [][]common.Cell {
+	i := common.Cell{Type: common.I}
+	j := common.Cell{Type: common.J}
+	l := common.Cell{Type: common.L}
+	o := common.Cell{Type: common.O}
+	s := common.Cell{Type: common.S}
+	t := common.Cell{Type: common.T}
+	z := common.Cell{Type: common.Z}
+	none := common.Cell{}
 	switch tetriminoType {
 	case common.I:
-		return [][]common.TetriminoType{
-			{common.I, common.I, common.I, common.I},
-			{common.TetriminoNone, common.TetriminoNone, common.TetriminoNone, common.TetriminoNone},
+		return [][]common.Cell{
+			{i, i, i, i},
+			{none, none, none, none},
 		}
 	case common.J:
-		return [][]common.TetriminoType{
-			{common.J, common.J, common.J},
-			{common.J, common.TetriminoNone, common.TetriminoNone},
+		return [][]common.Cell{
+			{j, j, j},
+			{j, none, none},
 		}
 	case common.L:
-		return [][]common.TetriminoType{
-			{common.L, common.L, common.L},
-			{common.TetriminoNone, common.TetriminoNone, common.L},
+		return [][]common.Cell{
+			{l, l, l},
+			{none, none, l},
 		}
 	case common.O:
-		return [][]common.TetriminoType{
-			{common.O, common.O},
-			{common.O, common.O},
+		return [][]common.Cell{
+			{o, o},
+			{o, o},
 		}
 	case common.S:
-		return [][]common.TetriminoType{
-			{common.S, common.S, common.TetriminoNone},
-			{common.TetriminoNone, common.S, common.S},
+		return [][]common.Cell{
+			{s, s, none},
+			{none, s, s},
 		}
 	case common.T:
-		return [][]common.TetriminoType{
-			{common.T, common.T, common.T},
-			{common.TetriminoNone, common.T, common.TetriminoNone},
+		return [][]common.Cell{
+			{t, t, t},
+			{none, t, none},
 		}
 	case common.Z:
-		return [][]common.TetriminoType{
-			{common.TetriminoNone, common.Z, common.Z},
-			{common.Z, common.Z, common.TetriminoNone},
+		return [][]common.Cell{
+			{none, z, z},
+			{z, z, none},
 		}
 	default:
-		return [][]common.TetriminoType{
-			{common.TetriminoNone, common.TetriminoNone, common.TetriminoNone},
-			{common.TetriminoNone, common.TetriminoNone, common.TetriminoNone},
+		return [][]common.Cell{
+			{none, none, none},
+			{none, none, none},
 		}
 	}
 }

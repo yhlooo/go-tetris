@@ -72,9 +72,29 @@ GOOS=js GOARCH=wasm go build -o web/app.wasm ./cmd/tetris-wasm && go run ./cmd/t
 ### 已实现特性
 
 - 随机方块生成器
-  - [x] 7-Bag
+  - 7-Bag
+  - 可扩展
 - 旋转系统
-  - [x] 超级旋转系统 (Super Rotation System, SRS)
+  - 超级旋转系统 (Super Rotation System, SRS)
+  - 可扩展
+- 记分系统
+  - 标准
+    - Soft Drop
+    - Hard Drop
+    - T-Spin
+    - T-Spin Single
+    - T-Spin Double
+    - T-Spin Triple
+    - Single Line Clear
+    - Double Line Clear
+    - Triple Line Clear
+    - Tetris
+    - Back-to-Back
+  - 可扩展
+- 速度表
+  - 标准
+  - 可扩展
+- 阴影块
 
 ## 致谢
 

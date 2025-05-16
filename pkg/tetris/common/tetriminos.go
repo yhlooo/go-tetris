@@ -1,6 +1,8 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // TetriminoType 方块类型
 type TetriminoType byte

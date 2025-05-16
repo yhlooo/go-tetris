@@ -52,7 +52,7 @@ func (ui *GameUI) paintFrameLoop(ctx app.Context, ch <-chan tetris.Frame) {
 
 // paintFrame 绘制帧
 func (ui *GameUI) paintFrame(ctx app.Context, frame tetris.Frame) {
-	ui.field.UpdateTetriminos(frame.Field.Tetriminos())
+	ui.field.UpdateTetriminos(frame.Field.Cells())
 	ui.next[0].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[0]))
 	ui.next[1].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[1]))
 	ui.next[2].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[2]))
