@@ -98,6 +98,7 @@ This project is not just a playable Tetris game, but also an easy-to-integrate T
 - Hold
 - Piece preview
 - Ghost piece
+- Lock Down Delay
 
 ## Acknowledgements
 

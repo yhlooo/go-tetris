@@ -3,6 +3,7 @@ package tetris
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -28,6 +29,15 @@ type Options struct {
 	SpeedController SpeedController
 	// 处理频率（单位： ticket/s ）
 	Frequency int
+
+	// 锁定延迟
+	LockDelay time.Duration
+	// 通过旋转、移动可重置锁定延迟
+	LockDownReset bool
+	// 锁定延迟最大重置次数
+	//
+	// 0 表示可无限重置
+	LockDelayMaxResetTimes int
 
 	// 随机生成器
 	Randomizer randomizer.Randomizer
@@ -102,6 +112,10 @@ var DefaultOptions = Options{
 	LinesPerLevel:   10,
 	SpeedController: DefaultSpeedController,
 	Frequency:       60,
+
+	LockDelay:              time.Millisecond * 500,
+	LockDownReset:          true,
+	LockDelayMaxResetTimes: 15,
 
 	Randomizer:     &randomizer.Bag7{},
 	Scorer:         DefaultScorer(),

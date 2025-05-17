@@ -96,6 +96,7 @@ GOOS=js GOARCH=wasm go build -o web/app.wasm ./cmd/tetris-wasm && go run ./cmd/t
 - 预览块
 - 暂存块
 - 阴影块
+- 锁定延迟
 
 ## 致谢
 

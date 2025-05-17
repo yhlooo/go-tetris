@@ -31,6 +31,10 @@ func NewTetris(opts Options) Tetris {
 		speed:         opts.SpeedController,
 		freq:          opts.Frequency,
 
+		lockDelay:              opts.LockDelay,
+		lockDownReset:          opts.LockDownReset,
+		lockDelayMaxResetTimes: opts.LockDelayMaxResetTimes,
+
 		randomizer:     opts.Randomizer,
 		scorer:         opts.Scorer,
 		rotationSystem: opts.RotationSystem,
@@ -61,9 +65,11 @@ type defaultTetris struct {
 	score            int
 	clearLines       int
 
-	holed   bool
-	tickets int64
-	notMove bool
+	holed              bool
+	notMove            bool
+	fallDownTickets    int64
+	lockDownTickets    int64
+	lockDownResetTimes int
 
 	holdEnabled bool
 
@@ -71,6 +77,10 @@ type defaultTetris struct {
 	ticker        *time.Ticker
 	speed         SpeedController
 	freq          int
+
+	lockDelay              time.Duration
+	lockDownReset          bool
+	lockDelayMaxResetTimes int
 
 	randomizer     randomizer.Randomizer
 	scorer         Scorer
@@ -200,24 +210,28 @@ func (t *defaultTetris) Input(op Op) {
 		changed = t.field.MoveActiveTetromino(0, 1)
 		if changed {
 			t.notMove = false
+			t.resetLockDownDelay()
 		}
 		t.logger.V(1).Info(fmt.Sprintf("move right, ret: %t", changed))
 	case OpMoveLeft:
 		changed = t.field.MoveActiveTetromino(0, -1)
 		if changed {
 			t.notMove = false
+			t.resetLockDownDelay()
 		}
 		t.logger.V(1).Info(fmt.Sprintf("move left, ret: %t", changed))
 	case OpRotateRight:
 		changed = t.rotationSystem.RotateRight(t.field)
 		if changed {
 			t.notMove = true
+			t.resetLockDownDelay()
 		}
 		t.logger.V(1).Info(fmt.Sprintf("rotate right, ret: %t", changed))
 	case OpRotateLeft:
 		changed = t.rotationSystem.RotateLeft(t.field)
 		if changed {
 			t.notMove = true
+			t.resetLockDownDelay()
 		}
 		t.logger.V(1).Info(fmt.Sprintf("rotate left, ret: %t", changed))
 	case OpSoftDrop:
@@ -225,8 +239,9 @@ func (t *defaultTetris) Input(op Op) {
 		if ok := t.field.MoveActiveTetromino(-1, 0); ok {
 			t.notMove = false
 			t.calcScore(ScoreEvent{SoftDrop: 1})
+			t.fullyResetLockDown()
 		}
-		t.tickets = 0
+		t.fallDownTickets = 0
 		changed = true
 	case OpHardDrop:
 		t.logger.V(1).Info("hard drop")
@@ -237,7 +252,7 @@ func (t *defaultTetris) Input(op Op) {
 		}
 		t.calcScore(ScoreEvent{HardDrop: dropLines})
 		t.lockDown()
-		t.tickets = 0
+		t.fallDownTickets = 0
 		t.logger.V(1).Info("lock down tetromino")
 		changed = true
 	case OpHold:
@@ -304,21 +319,42 @@ func (t *defaultTetris) run(ctx context.Context) {
 			continue
 		}
 
-		t.tickets++
 		t.lock.Lock()
+		t.fallDownTickets++
+		t.lockDownTickets++
+
+		changed := false
+
+		// 自然下落
 		speed := t.speed(t.level)
-		if t.tickets > int64(float64(t.freq)/speed) {
+		if t.fallDownTickets > int64(float64(t.freq)/speed) {
 			// 到时间下落一格了
 			t.logger.V(1).Info("auto drop")
-			if ok := t.field.MoveActiveTetromino(-1, 0); !ok {
-				t.lockDown()
-				t.logger.V(1).Info("lock down tetromino")
-			} else {
+			if ok := t.field.MoveActiveTetromino(-1, 0); ok {
 				t.notMove = false
+				t.fullyResetLockDown()
+				changed = true
 			}
-			t.sendFrame()
-			t.tickets = 0
+			t.fallDownTickets = 0
 		}
+
+		// 锁定
+		if t.lockDownTickets > (int64(t.lockDelay)*int64(t.freq))/int64(time.Second) {
+			if ok := t.field.MoveActiveTetromino(-1, 0); !ok {
+				// 下方没有空间了，锁定
+				t.lockDown()
+				t.logger.Info(fmt.Sprintf("lock down, tickets: %d", t.lockDownTickets))
+				changed = true
+			} else {
+				// 下方还有空间，还原
+				t.field.MoveActiveTetromino(1, 0)
+			}
+		}
+
+		if changed {
+			t.sendFrame()
+		}
+
 		t.lock.Unlock()
 	}
 }
@@ -334,6 +370,25 @@ func (t *defaultTetris) lockDown() {
 	}
 	t.nextTetrominoes = append(t.nextTetrominoes[1:], t.randomizer.Next())
 	t.holed = false
+	t.fullyResetLockDown()
+}
+
+// resetLockDownDelay 重置锁定延迟计数器
+func (t *defaultTetris) resetLockDownDelay() {
+	if !t.lockDownReset {
+		return
+	}
+	if t.lockDelayMaxResetTimes > 0 && t.lockDownResetTimes > t.lockDelayMaxResetTimes {
+		return
+	}
+	t.lockDownTickets = 0
+	t.lockDownResetTimes++
+}
+
+// fullyResetLockDown 完全重置锁定延迟相关计数器
+func (t *defaultTetris) fullyResetLockDown() {
+	t.lockDownTickets = 0
+	t.lockDownResetTimes = 0
 }
 
 // sendFrame 发送帧
