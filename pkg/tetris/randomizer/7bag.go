@@ -21,14 +21,14 @@ func New7Bag(s rand.Source) *Bag7 {
 type Bag7 struct {
 	lock   sync.Mutex
 	rand   *rand.Rand
-	buffer [7]common.TetriminoType
+	buffer [7]common.TetrominoType
 	i      int
 }
 
 var _ Randomizer = (*Bag7)(nil)
 
 // Next 获取下一个方块类型
-func (b *Bag7) Next() common.TetriminoType {
+func (b *Bag7) Next() common.TetrominoType {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
@@ -36,8 +36,8 @@ func (b *Bag7) Next() common.TetriminoType {
 		b.rand = rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano())))
 	}
 
-	if b.buffer[0] == common.TetriminoNone {
-		b.buffer = [7]common.TetriminoType{
+	if b.buffer[0] == common.TetrominoNone {
+		b.buffer = [7]common.TetrominoType{
 			common.I, common.J, common.L, common.O,
 			common.S, common.T, common.Z,
 		}

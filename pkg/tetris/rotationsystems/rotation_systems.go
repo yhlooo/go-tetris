@@ -20,7 +20,7 @@ type SuperRotationSystem struct{}
 var _ RotationSystem = SuperRotationSystem{}
 
 // srsJLSTZWallKickData SRS 的 J L S T Z 方块踢墙数据
-var srsJLSTZWallKickData = map[[2]common.TetriminoDir][]common.Location{
+var srsJLSTZWallKickData = map[[2]common.TetrominoDir][]common.Location{
 	{common.Dir0, common.DirR}: {{0, 0}, {0, -1}, {+1, -1}, {-2, 0}, {-2, -1}},
 	{common.DirR, common.Dir0}: {{0, 0}, {0, +1}, {-1, +1}, {+2, 0}, {+2, +1}},
 	{common.DirR, common.Dir2}: {{0, 0}, {0, +1}, {-1, +1}, {+2, 0}, {+2, +1}},
@@ -32,7 +32,7 @@ var srsJLSTZWallKickData = map[[2]common.TetriminoDir][]common.Location{
 }
 
 // srsIWallKickData SRS 的 I 方块踢墙数据
-var srsIWallKickData = map[[2]common.TetriminoDir][]common.Location{
+var srsIWallKickData = map[[2]common.TetrominoDir][]common.Location{
 	{common.Dir0, common.DirR}: {{0, 0}, {0, -2}, {0, +1}, {-1, -2}, {+2, +1}},
 	{common.DirR, common.Dir0}: {{0, 0}, {0, +2}, {0, -1}, {+1, +2}, {-2, -1}},
 	{common.DirR, common.Dir2}: {{0, 0}, {0, -1}, {0, +2}, {+2, -1}, {-1, +2}},
@@ -55,23 +55,23 @@ func (srs SuperRotationSystem) RotateLeft(field *common.Field) bool {
 
 // rotate 旋转
 func (SuperRotationSystem) rotate(field *common.Field, dir int) bool {
-	tetrimino := field.ActiveTetrimino()
-	if tetrimino == nil {
+	tetromino := field.ActiveTetromino()
+	if tetromino == nil {
 		return false
 	}
 
-	oldDir := tetrimino.Dir
-	newDir := common.TetriminoDir(int(oldDir)+dir) % 4
-	oldRow := tetrimino.Row
-	oldCol := tetrimino.Column
+	oldDir := tetromino.Dir
+	newDir := common.TetrominoDir(int(oldDir)+dir) % 4
+	oldRow := tetromino.Row
+	oldCol := tetromino.Column
 
 	// 确定踢墙数据
 	var wallKickData []common.Location
-	switch tetrimino.Type {
+	switch tetromino.Type {
 	case common.J, common.L, common.S, common.T, common.Z:
-		wallKickData = srsJLSTZWallKickData[[2]common.TetriminoDir{oldDir, newDir}]
+		wallKickData = srsJLSTZWallKickData[[2]common.TetrominoDir{oldDir, newDir}]
 	case common.I:
-		wallKickData = srsIWallKickData[[2]common.TetriminoDir{oldDir, newDir}]
+		wallKickData = srsIWallKickData[[2]common.TetrominoDir{oldDir, newDir}]
 	default:
 	}
 	if wallKickData == nil {
@@ -79,10 +79,10 @@ func (SuperRotationSystem) rotate(field *common.Field, dir int) bool {
 	}
 
 	// 尝试旋转
-	tetrimino.Dir = newDir
+	tetromino.Dir = newDir
 	for _, wallKick := range wallKickData {
-		tetrimino.Row = oldRow + wallKick.Row()
-		tetrimino.Column = oldCol + wallKick.Column()
+		tetromino.Row = oldRow + wallKick.Row()
+		tetromino.Column = oldCol + wallKick.Column()
 		if field.IsValid() {
 			// 旋转成功
 			return true
@@ -90,8 +90,8 @@ func (SuperRotationSystem) rotate(field *common.Field, dir int) bool {
 	}
 
 	// 旋转失败，还原
-	tetrimino.Dir = oldDir
-	tetrimino.Row = oldRow
-	tetrimino.Column = oldCol
+	tetromino.Dir = oldDir
+	tetromino.Row = oldRow
+	tetromino.Column = oldCol
 	return false
 }

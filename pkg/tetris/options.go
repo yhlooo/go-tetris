@@ -18,7 +18,7 @@ type Options struct {
 	// 是否开启暂存方块功能
 	HoldEnabled bool
 	// 提示的下个方块数量
-	ShowNextTetriminos int
+	ShowNextTetrominoes int
 
 	// 初始级别
 	InitialLevel int
@@ -95,8 +95,8 @@ var DefaultOptions = Options{
 	Rows:    20,
 	Columns: 10,
 
-	HoldEnabled:        true,
-	ShowNextTetriminos: 3,
+	HoldEnabled:         true,
+	ShowNextTetrominoes: 3,
 
 	InitialLevel:    1,
 	LinesPerLevel:   10,

@@ -52,14 +52,14 @@ func (ui *GameUI) paintFrameLoop(ctx app.Context, ch <-chan tetris.Frame) {
 
 // paintFrame 绘制帧
 func (ui *GameUI) paintFrame(ctx app.Context, frame tetris.Frame) {
-	ui.field.UpdateTetriminos(frame.Field.Cells())
-	ui.next[0].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[0]))
-	ui.next[1].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[1]))
-	ui.next[2].UpdateTetriminos(newTetriminoGridData(frame.NextTetriminos[2]))
-	if frame.HoldingTetrimino != nil {
-		ui.hold.UpdateTetriminos(newTetriminoGridData(*frame.HoldingTetrimino))
+	ui.field.UpdateTetrominoes(frame.Field.Cells())
+	ui.next[0].UpdateTetrominoes(newTetrominoGridData(frame.NextTetrominoes[0]))
+	ui.next[1].UpdateTetrominoes(newTetrominoGridData(frame.NextTetrominoes[1]))
+	ui.next[2].UpdateTetrominoes(newTetrominoGridData(frame.NextTetrominoes[2]))
+	if frame.HoldingTetromino != nil {
+		ui.hold.UpdateTetrominoes(newTetrominoGridData(*frame.HoldingTetromino))
 	} else {
-		ui.hold.UpdateTetriminos(newTetriminoGridData(common.TetriminoNone))
+		ui.hold.UpdateTetrominoes(newTetrominoGridData(common.TetrominoNone))
 	}
 
 	ui.score = frame.Score

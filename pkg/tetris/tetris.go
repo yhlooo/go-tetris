@@ -27,10 +27,10 @@ type Tetris interface {
 	SetDebug(enabled bool)
 	// Debug 返回是否调试模式
 	Debug() bool
-	// ChangeActiveTetriminoType 更换活跃方块类型
+	// ChangeActiveTetrominoType 更换活跃方块类型
 	//
 	// 仅在调试模式下生效
-	ChangeActiveTetriminoType(tetriminoType common.TetriminoType) error
+	ChangeActiveTetrominoType(tetrominoType common.TetrominoType) error
 
 	// Input 输入操作指令
 	Input(op Op)
@@ -122,9 +122,9 @@ type Frame struct {
 	// 场上方块填充情况
 	Field common.FieldReader
 	// 暂存的方块
-	HoldingTetrimino *common.TetriminoType
+	HoldingTetromino *common.TetrominoType
 	// 下几个方块
-	NextTetriminos []common.TetriminoType
+	NextTetrominoes []common.TetrominoType
 	// 级别
 	Level int
 	// 分数

@@ -9,7 +9,7 @@ import (
 )
 
 // NewTetrisGrid 创建 TetrisGrid
-func NewTetrisGrid(rows, cols int, colors TetriminoColors) *TetrisGrid {
+func NewTetrisGrid(rows, cols int, colors TetrominoColors) *TetrisGrid {
 	data := make([][]common.Cell, rows)
 	for i := range data {
 		data[i] = make([]common.Cell, cols)
@@ -32,7 +32,7 @@ type TetrisGrid struct {
 
 	cellWidth   int
 	borderWidth int
-	colors      TetriminoColors
+	colors      TetrominoColors
 
 	data [][]common.Cell
 
@@ -51,11 +51,11 @@ func (grid *TetrisGrid) Render() app.UI {
 // OnMount 挂载元素时
 func (grid *TetrisGrid) OnMount(_ app.Context) {
 	grid.paintBorder()
-	grid.paintTetriminos()
+	grid.paintTetrominoes()
 }
 
-// UpdateTetriminos 更新方块
-func (grid *TetrisGrid) UpdateTetriminos(data [][]common.Cell) {
+// UpdateTetrominoes 更新方块
+func (grid *TetrisGrid) UpdateTetrominoes(data [][]common.Cell) {
 	grid.data = data
 	rows := len(data)
 	cols := grid.cols
@@ -65,7 +65,7 @@ func (grid *TetrisGrid) UpdateTetriminos(data [][]common.Cell) {
 	if rows != grid.rows || cols != grid.cols {
 		grid.resize(rows, cols)
 	}
-	grid.paintTetriminos()
+	grid.paintTetrominoes()
 }
 
 // Size 获取当前大小
@@ -86,8 +86,8 @@ func (grid *TetrisGrid) resize(rows, cols int) {
 	}
 }
 
-// paintTetriminos 绘制方块
-func (grid *TetrisGrid) paintTetriminos() {
+// paintTetrominoes 绘制方块
+func (grid *TetrisGrid) paintTetrominoes() {
 	if grid.canvas.JSValue() == nil {
 		return
 	}
@@ -98,7 +98,7 @@ func (grid *TetrisGrid) paintTetriminos() {
 
 	for i, row := range grid.data {
 		for j, cell := range row {
-			color := grid.colors.Tetrimino(cell.Type)
+			color := grid.colors.Tetromino(cell.Type)
 			x := j * (grid.cellWidth + grid.borderWidth)
 			y := (grid.rows - i - 1) * (grid.cellWidth + grid.borderWidth)
 			if cell.Shadow {
@@ -140,8 +140,8 @@ func (grid *TetrisGrid) paintBorder() {
 	canvasCTX.Call("stroke")
 }
 
-// newTetriminoGridData 创建方块网格数据
-func newTetriminoGridData(tetriminoType common.TetriminoType) [][]common.Cell {
+// newTetrominoGridData 创建方块网格数据
+func newTetrominoGridData(tetrominoType common.TetrominoType) [][]common.Cell {
 	i := common.Cell{Type: common.I}
 	j := common.Cell{Type: common.J}
 	l := common.Cell{Type: common.L}
@@ -150,7 +150,7 @@ func newTetriminoGridData(tetriminoType common.TetriminoType) [][]common.Cell {
 	t := common.Cell{Type: common.T}
 	z := common.Cell{Type: common.Z}
 	none := common.Cell{}
-	switch tetriminoType {
+	switch tetrominoType {
 	case common.I:
 		return [][]common.Cell{
 			{i, i, i, i},
@@ -194,51 +194,51 @@ func newTetriminoGridData(tetriminoType common.TetriminoType) [][]common.Cell {
 	}
 }
 
-// TetriminoColors 方块颜色
-type TetriminoColors struct {
+// TetrominoColors 方块颜色
+type TetrominoColors struct {
 	Border     string
 	Background string
-	TetriminoI string
-	TetriminoJ string
-	TetriminoL string
-	TetriminoO string
-	TetriminoS string
-	TetriminoT string
-	TetriminoZ string
+	TetrominoI string
+	TetrominoJ string
+	TetrominoL string
+	TetrominoO string
+	TetrominoS string
+	TetrominoT string
+	TetrominoZ string
 }
 
-// Tetrimino 获取指定方块颜色
-func (colors TetriminoColors) Tetrimino(tetriminoType common.TetriminoType) string {
-	switch tetriminoType {
-	case common.TetriminoNone:
+// Tetromino 获取指定方块颜色
+func (colors TetrominoColors) Tetromino(tetrominoType common.TetrominoType) string {
+	switch tetrominoType {
+	case common.TetrominoNone:
 		return colors.Background
 	case common.I:
-		return colors.TetriminoI
+		return colors.TetrominoI
 	case common.J:
-		return colors.TetriminoJ
+		return colors.TetrominoJ
 	case common.L:
-		return colors.TetriminoL
+		return colors.TetrominoL
 	case common.O:
-		return colors.TetriminoO
+		return colors.TetrominoO
 	case common.S:
-		return colors.TetriminoS
+		return colors.TetrominoS
 	case common.T:
-		return colors.TetriminoT
+		return colors.TetrominoT
 	case common.Z:
-		return colors.TetriminoZ
+		return colors.TetrominoZ
 	}
 	return colors.Background
 }
 
-// DefaultTetriminoColors 默认颜色
-var DefaultTetriminoColors = TetriminoColors{
+// DefaultTetrominoColors 默认颜色
+var DefaultTetrominoColors = TetrominoColors{
 	Border:     "#1b1b1b",
 	Background: "#000000",
-	TetriminoI: "#67c4ec",
-	TetriminoJ: "#5f64a9",
-	TetriminoL: "#df8136",
-	TetriminoO: "#f0d543",
-	TetriminoS: "#62b451",
-	TetriminoT: "#a25399",
-	TetriminoZ: "#db3e32",
+	TetrominoI: "#67c4ec",
+	TetrominoJ: "#5f64a9",
+	TetrominoL: "#df8136",
+	TetrominoO: "#f0d543",
+	TetrominoS: "#62b451",
+	TetrominoT: "#a25399",
+	TetrominoZ: "#db3e32",
 }

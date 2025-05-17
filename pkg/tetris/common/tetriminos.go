@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-// TetriminoType 方块类型
-type TetriminoType byte
+// TetrominoType 方块类型
+type TetrominoType byte
 
-// TetriminoType 的枚举
+// TetrominoType 的枚举
 const (
-	TetriminoNone TetriminoType = iota
+	TetrominoNone TetrominoType = iota
 	I
 	J
 	L
@@ -20,9 +20,9 @@ const (
 )
 
 // String 返回字符串表示
-func (t TetriminoType) String() string {
+func (t TetrominoType) String() string {
 	switch t {
-	case TetriminoNone:
+	case TetrominoNone:
 		return "None"
 	case I:
 		return "I"
@@ -42,13 +42,13 @@ func (t TetriminoType) String() string {
 	return fmt.Sprintf("Invalid(%d)", t)
 }
 
-// TetriminoDir 方块方向
-type TetriminoDir byte
+// TetrominoDir 方块方向
+type TetrominoDir byte
 
-// TetriminoDir 的枚举
+// TetrominoDir 的枚举
 const (
 	// Dir0 初始状态
-	Dir0 TetriminoDir = iota
+	Dir0 TetrominoDir = iota
 	// DirR 顺时针旋转 90 度
 	DirR
 	// Dir2 旋转 180 度
@@ -58,7 +58,7 @@ const (
 )
 
 // String 返回字符串表示
-func (d TetriminoDir) String() string {
+func (d TetrominoDir) String() string {
 	switch d {
 	case Dir0:
 		return "0"
@@ -73,8 +73,8 @@ func (d TetriminoDir) String() string {
 }
 
 var (
-	// tetriminoShapes 方块形状
-	tetriminoShapes = [7][4][4]Location{
+	// tetrominoShapes 方块形状
+	tetrominoShapes = [7][4][4]Location{
 		// I
 		{
 			{{2, 0}, {2, 1}, {2, 2}, {2, 3}},
@@ -127,25 +127,25 @@ var (
 	}
 )
 
-// Tetrimino 方块
-type Tetrimino struct {
+// Tetromino 方块
+type Tetromino struct {
 	// 方块类型
-	Type TetriminoType
+	Type TetrominoType
 	// 方块位置
 	Row, Column int
 	// 方块方向
-	Dir TetriminoDir
+	Dir TetrominoDir
 }
 
 // Cells 获取方块各格坐标
 //
 // 每个元素是一个方格的坐标
-func (t Tetrimino) Cells() [4]Location {
+func (t Tetromino) Cells() [4]Location {
 	// 获取相对方块定位点的偏移
 	if t.Type < 1 || t.Type > 7 || t.Dir < 0 || t.Dir > 3 {
 		return [4]Location{}
 	}
-	ret := tetriminoShapes[t.Type-1][t.Dir]
+	ret := tetrominoShapes[t.Type-1][t.Dir]
 
 	// 加上方块本身位置
 	for i := range ret {

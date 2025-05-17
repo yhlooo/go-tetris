@@ -220,7 +220,7 @@ func (ui *GameUI) newHelpPage() tview.Primitive {
                  ESC : Pause
 [black:lightgray]                   Debug                    [white:black]
                    X : On/Off Debug Mode
-       O/I/J/L/S/T/Z : Change Tetrimino
+       O/I/J/L/S/T/Z : Change Tetromino
 
 [black:lightgray]                   Score                    [white:black]
     Soft Dro                1 * Distance
@@ -378,19 +378,19 @@ func (ui *GameUI) handleGameInput(event *tcell.EventKey) *tcell.EventKey {
 				ui.logrusLogger.SetLevel(logrus.InfoLevel)
 			}
 		case 'I':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.I)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.I)
 		case 'J':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.J)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.J)
 		case 'L':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.L)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.L)
 		case 'O':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.O)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.O)
 		case 'S':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.S)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.S)
 		case 'T':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.T)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.T)
 		case 'Z':
-			_ = ui.tetris.ChangeActiveTetriminoType(common.Z)
+			_ = ui.tetris.ChangeActiveTetrominoType(common.Z)
 		}
 	default:
 	}
@@ -414,7 +414,7 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 		for j := 0; j < 10; j++ {
 			if cells[i][j].Shadow {
 				switch cells[i][j].Type {
-				case common.TetriminoNone:
+				case common.TetrominoNone:
 					fieldContent += "  "
 				case common.I:
 					fieldContent += "[darkcyan]..[black]"
@@ -433,7 +433,7 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 				}
 			} else {
 				switch cells[i][j].Type {
-				case common.TetriminoNone:
+				case common.TetrominoNone:
 					fieldContent += "  "
 				case common.I:
 					fieldContent += "[:darkcyan]  [:black]"
@@ -458,8 +458,8 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 	_, _ = fmt.Fprint(ui.fieldBox, fieldContent)
 
 	ui.holdBox.Clear()
-	if frame.HoldingTetrimino != nil {
-		_, _ = fmt.Fprint(ui.holdBox, paintTetrisTetrimino(*frame.HoldingTetrimino))
+	if frame.HoldingTetromino != nil {
+		_, _ = fmt.Fprint(ui.holdBox, paintTetrisTetromino(*frame.HoldingTetromino))
 	}
 	ui.scoreBox.Clear()
 	_, _ = fmt.Fprintf(ui.scoreBox, "%d", frame.Score)
@@ -468,8 +468,8 @@ func (ui *GameUI) paintGameFrame(frame tetris.Frame) {
 	ui.linesBox.Clear()
 	_, _ = fmt.Fprintf(ui.linesBox, "%d", frame.ClearLines)
 	ui.nextBox.Clear()
-	for _, b := range frame.NextTetriminos {
-		_, _ = fmt.Fprint(ui.nextBox, paintTetrisTetrimino(b))
+	for _, b := range frame.NextTetrominoes {
+		_, _ = fmt.Fprint(ui.nextBox, paintTetrisTetromino(b))
 	}
 
 	// 游戏结束
@@ -493,10 +493,10 @@ func (ui *GameUI) clearGameInfo() {
 	ui.fieldBox.Clear()
 }
 
-// paintTetrisTetrimino 绘制方块
-func paintTetrisTetrimino(tetriminoType common.TetriminoType) string {
-	switch tetriminoType {
-	case common.TetriminoNone:
+// paintTetrisTetromino 绘制方块
+func paintTetrisTetromino(tetrominoType common.TetrominoType) string {
+	switch tetrominoType {
+	case common.TetrominoNone:
 	case common.I:
 		return `
 

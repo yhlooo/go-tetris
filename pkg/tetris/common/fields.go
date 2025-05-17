@@ -4,22 +4,22 @@ package common
 type FieldReader interface {
 	// Size 获取场大小
 	Size() (rows, cols int)
-	// FilledTetrimino 获取指定位置已填充的方块类型
-	FilledTetrimino(row, col int) (TetriminoType, bool)
+	// FilledTetromino 获取指定位置已填充的方块类型
+	FilledTetromino(row, col int) (TetrominoType, bool)
 	// Cells 获取场上所有格子信息，包括固定块、活跃块、阴影块
 	Cells() [][]Cell
-	// ActiveTetrimino 获取当前活跃方块
-	ActiveTetrimino() *Tetrimino
+	// ActiveTetromino 获取当前活跃方块
+	ActiveTetromino() *Tetromino
 }
 
 // Cell 格子
 type Cell struct {
-	Type   TetriminoType
+	Type   TetrominoType
 	Shadow bool
 }
 
 // NewField 创建 Field
-func NewField(rows, cols int, tetrimino *Tetrimino) *Field {
+func NewField(rows, cols int, tetromino *Tetromino) *Field {
 	if rows < 2 {
 		rows = 2
 	}
@@ -27,14 +27,14 @@ func NewField(rows, cols int, tetrimino *Tetrimino) *Field {
 		cols = 4
 	}
 
-	filled := make([][]TetriminoType, rows)
+	filled := make([][]TetrominoType, rows)
 	for i := range filled {
-		filled[i] = make([]TetriminoType, cols)
+		filled[i] = make([]TetrominoType, cols)
 	}
 	return &Field{
 		rows:   rows,
 		cols:   cols,
-		active: tetrimino,
+		active: tetromino,
 		filled: filled,
 	}
 }
@@ -46,9 +46,9 @@ type Field struct {
 	// 总行列数
 	rows, cols int
 	// 当前活跃方块
-	active *Tetrimino
+	active *Tetromino
 	// 已填充方块
-	filled [][]TetriminoType
+	filled [][]TetrominoType
 }
 
 var _ FieldReader = &Field{}
@@ -74,7 +74,7 @@ func (f *Field) Cells() [][]Cell {
 
 	//添加阴影块
 	curActiveRow, curActiveCol := f.active.Row, f.active.Column
-	for f.MoveActiveTetrimino(-1, 0) {
+	for f.MoveActiveTetromino(-1, 0) {
 	}
 	for _, cell := range f.active.Cells() {
 		row := cell.Row()
@@ -99,25 +99,25 @@ func (f *Field) Cells() [][]Cell {
 	return ret
 }
 
-// Tetrimino 获取指定位置的方块类型，包含活跃方块
-func (f *Field) Tetrimino(row, col int) TetriminoType {
-	ret, _ := f.FilledTetrimino(row, col)
-	if ret != TetriminoNone {
+// Tetromino 获取指定位置的方块类型，包含活跃方块
+func (f *Field) Tetromino(row, col int) TetrominoType {
+	ret, _ := f.FilledTetromino(row, col)
+	if ret != TetrominoNone {
 		return ret
 	}
 	if f.active == nil {
-		return TetriminoNone
+		return TetrominoNone
 	}
 	for _, cell := range f.active.Cells() {
 		if cell.Row() == row && cell.Column() == col {
 			return f.active.Type
 		}
 	}
-	return TetriminoNone
+	return TetrominoNone
 }
 
-// FilledTetrimino 获取指定位置已填充的方块类型
-func (f *Field) FilledTetrimino(row, col int) (TetriminoType, bool) {
+// FilledTetromino 获取指定位置已填充的方块类型
+func (f *Field) FilledTetromino(row, col int) (TetrominoType, bool) {
 	if row < 0 || len(f.filled) <= row {
 		return 0, false
 	}
@@ -127,27 +127,27 @@ func (f *Field) FilledTetrimino(row, col int) (TetriminoType, bool) {
 	return f.filled[row][col], true
 }
 
-// ActiveTetrimino 获取当前活跃方块
-func (f *Field) ActiveTetrimino() *Tetrimino {
+// ActiveTetromino 获取当前活跃方块
+func (f *Field) ActiveTetromino() *Tetromino {
 	return f.active
 }
 
-// SetTetrimino 设置指定位置方块类型
-func (f *Field) SetTetrimino(row, col int, tetriminoType TetriminoType) bool {
+// SetTetromino 设置指定位置方块类型
+func (f *Field) SetTetromino(row, col int, tetrominoType TetrominoType) bool {
 	if row < 0 || len(f.filled) <= row {
 		return false
 	}
 	if col < 0 || len(f.filled[row]) <= col {
 		return false
 	}
-	f.filled[row][col] = tetriminoType
+	f.filled[row][col] = tetrominoType
 	return true
 }
 
-// MoveActiveTetrimino 移动活跃方块
+// MoveActiveTetromino 移动活跃方块
 //
 // 若移动后方块没有超出边界且没有与其他方块重合则移动成功并返回 true ，否则不移动并返回 false
-func (f *Field) MoveActiveTetrimino(row, col int) bool {
+func (f *Field) MoveActiveTetromino(row, col int) bool {
 	if f.active == nil {
 		return false
 	}
@@ -166,12 +166,12 @@ func (f *Field) MoveActiveTetrimino(row, col int) bool {
 	return true
 }
 
-// ChangeActiveTetrimino 更换活跃方块
+// ChangeActiveTetromino 更换活跃方块
 //
 // 若更换后方块没有超出边界且没有与其他方块重合则更换成功并返回 true ，否则不更换并返回 false
-func (f *Field) ChangeActiveTetrimino(tetrimino *Tetrimino) bool {
+func (f *Field) ChangeActiveTetromino(tetromino *Tetromino) bool {
 	oldActive := f.active
-	f.active = tetrimino
+	f.active = tetromino
 	if !f.IsValid() {
 		f.active = oldActive
 		return false
@@ -181,10 +181,10 @@ func (f *Field) ChangeActiveTetrimino(tetrimino *Tetrimino) bool {
 
 var tCorners = [4]Location{{0, 0}, {0, 2}, {2, 0}, {2, 2}}
 
-// PinActiveTetrimino 钉住当前活跃方块清除填满的行然后用新方块替换活跃方块
+// LockDown 锁定当前活跃方块清除填满的行然后用新方块替换活跃方块
 //
 // 若更换方块完后活跃方块没有超出边界且没有与其他方块重合则操作成功并返回 ok=true ，否则不更换方块（但仍执行钉住和清除操作）并返回 ok=false
-func (f *Field) PinActiveTetrimino(newTetrimino *Tetrimino) (tSpin bool, clearLines int, ok bool) {
+func (f *Field) LockDown(newTetromino *Tetromino) (tSpin bool, clearLines int, ok bool) {
 	// 固定活跃方块
 	if f.active != nil {
 		if f.active.Type == T {
@@ -197,7 +197,7 @@ func (f *Field) PinActiveTetrimino(newTetrimino *Tetrimino) (tSpin bool, clearLi
 					corners++
 					continue
 				}
-				if cell, _ := f.FilledTetrimino(row, col); cell != TetriminoNone {
+				if cell, _ := f.FilledTetromino(row, col); cell != TetrominoNone {
 					corners++
 					continue
 				}
@@ -207,7 +207,7 @@ func (f *Field) PinActiveTetrimino(newTetrimino *Tetrimino) (tSpin bool, clearLi
 			}
 		}
 		for _, cell := range f.active.Cells() {
-			_ = f.SetTetrimino(cell.Row(), cell.Column(), f.active.Type)
+			_ = f.SetTetromino(cell.Row(), cell.Column(), f.active.Type)
 		}
 	}
 
@@ -216,7 +216,7 @@ func (f *Field) PinActiveTetrimino(newTetrimino *Tetrimino) (tSpin bool, clearLi
 		row := f.filled[i]
 		full := true
 		for _, cell := range row {
-			if cell == TetriminoNone {
+			if cell == TetrominoNone {
 				full = false
 				break
 			}
@@ -229,11 +229,11 @@ func (f *Field) PinActiveTetrimino(newTetrimino *Tetrimino) (tSpin bool, clearLi
 		}
 	}
 	for i := 0; i < clearLines; i++ {
-		f.filled = append(f.filled, make([]TetriminoType, f.cols))
+		f.filled = append(f.filled, make([]TetrominoType, f.cols))
 	}
 
 	// 更换活跃方块
-	return tSpin, clearLines, f.ChangeActiveTetrimino(newTetrimino)
+	return tSpin, clearLines, f.ChangeActiveTetromino(newTetromino)
 }
 
 // IsValid 是否合法
@@ -251,7 +251,7 @@ func (f *Field) IsValid() bool {
 			return false
 		}
 		// 与其它方块重合
-		if filled, _ := f.FilledTetrimino(row, col); filled != TetriminoNone {
+		if filled, _ := f.FilledTetromino(row, col); filled != TetrominoNone {
 			return false
 		}
 	}
