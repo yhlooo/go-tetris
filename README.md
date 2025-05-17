@@ -71,8 +71,36 @@ Then open <http://localhost:8000> in your browser.
 
 This project is not just a playable Tetris game, but also an easy-to-integrate Tetris library. You can use it to build your own Tetris game. Refer to the [Tetris](pkg/tetris/tetris.go#L9) interface for API details.
 
+**Note: This package is still in its very early stage, and the interfaces may have BREAKING CHANGES.**
+
+### Implemented Features
+
+- Randomizer
+  - 7-Bag
+  - Customizable
+- Rotation System
+  - Super Rotation System (SRS)
+  - Customizable
+- Scoring System
+  - Follow the Tetris Guidelines
+    - Soft Drop
+    - Hard Drop
+    - T-Spin
+    - T-Spin Single
+    - T-Spin Double
+    - T-Spin Triple
+    - Single Line Clear
+    - Double Line Clear
+    - Triple Line Clear
+    - Tetris
+    - Back-to-Back
+  - Customizable
+- Hold
+- Piece preview
+- Ghost piece
+
 ## Acknowledgements
 
-- [Hard Drop Tetris Wiki](https://harddrop.com/wiki/Tetris_Wiki): Provides detailed explanations of Tetris mechanics.
+- [Tetris Wiki](https://tetris.wiki/): Provides detailed explanations of Tetris mechanics.
 - [rivo/tview](https://github.com/rivo/tview): Provides powerful terminal-based UI components.
 - [maxence-charriere/go-app](https://github.com/maxence-charriere/go-app): Provides Web UI implementation via [Wasm](https://webassembly.org/).

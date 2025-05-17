@@ -69,6 +69,8 @@ GOOS=js GOARCH=wasm go build -o web/app.wasm ./cmd/tetris-wasm && go run ./cmd/t
 
 该项目不仅是一个可玩的 Tetris 游戏，它同时是一个易于被集成的 Tetris 库。你可以使用它构建你自己的 Tetris 游戏，参考接口 [Tetris](pkg/tetris/tetris.go#L9) 。
 
+**注意：该包还处于非常早期阶段，接口可能发生破坏性变更**
+
 ### 已实现特性
 
 - 随机方块生成器
@@ -78,7 +80,7 @@ GOOS=js GOARCH=wasm go build -o web/app.wasm ./cmd/tetris-wasm && go run ./cmd/t
   - 超级旋转系统 (Super Rotation System, SRS)
   - 可扩展
 - 记分系统
-  - 标准
+  - 遵循俄罗斯方块准则
     - Soft Drop
     - Hard Drop
     - T-Spin
@@ -91,13 +93,12 @@ GOOS=js GOARCH=wasm go build -o web/app.wasm ./cmd/tetris-wasm && go run ./cmd/t
     - Tetris
     - Back-to-Back
   - 可扩展
-- 速度表
-  - 标准
-  - 可扩展
+- 预览块
+- 暂存块
 - 阴影块
 
 ## 致谢
 
-- [Hard Drop Tetris Wiki](https://harddrop.com/wiki/Tetris_Wiki) : 提供了关于 Tetris 详细的机制说明
+- [Tetris Wiki](https://tetris.wiki/) : 提供了关于 Tetris 详细的机制说明
 - [rivo/tview](https://github.com/rivo/tview) : 提供了强大的基于终端的 UI
 - [maxence-charriere/go-app](https://github.com/maxence-charriere/go-app) : 提供了基于 [Wasm](https://webassembly.org/) 的 Web UI
